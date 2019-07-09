@@ -39,7 +39,10 @@
  * don't have to. */
 #define sscanf THINK_TWICE_ABOUT_USING_SSCANF
 
+// json 对象和 json 数组在创建之后的默认大小（可存储成员个数）
 #define STARTING_CAPACITY 16
+
+// 表示 json 数据结构中支持的最大嵌套层数
 #define MAX_NESTING       2048
 
 #define FLOAT_FORMAT "%1.17g" /* do not increase precision without incresing NUM_BUF_SIZE */
@@ -67,6 +70,15 @@ static int parson_escape_slashes = 1;
 #define IS_CONT(b) (((unsigned char)(b) & 0xC0) == 0x80) /* is utf-8 continuation byte */
 
 /* Type definitions */
+// 下面这定义了组织 json 数据需要的几个基础数据类型
+// 通过这些数据类型，我们可以把指定的 json 数据组织成树形结构并
+// 动态添加、移除或者修改 json 数据成员，需要注意的是这个树形机
+// 构表示了 json 数据成员之间的结构化关系，所以我们在这个基础上
+// 需要执行一个“序列化”操作后，才会形成字符串格式的 json 数据
+// 在我们对 json 数据结构动态操作时，需要动态内存管理的基础支持
+// 以实现动态创建和释放 json 数据成员结构
+
+// 定义了 json 数据中会用到的几种“变量类型”
 typedef union json_value_value {
     char        *string;
     double       number;
@@ -76,25 +88,29 @@ typedef union json_value_value {
     int          null;
 } JSON_Value_Value;
 
+// 定义一个 json 数据中的“变量”表示形式
 struct json_value_t {
-    JSON_Value      *parent;
-    JSON_Value_Type  type;
-    JSON_Value_Value value;
+    JSON_Value      *parent;     // 当前 JSON_Value 在“树形结构”表示中父节点指针 
+    JSON_Value_Type  type;       // 当前 JSON_Value 变量类型
+    JSON_Value_Value value;      // 当前 JSON_Value 变量值
 };
 
+// 定义一个 json 数据中的“对象”表示形式
+// json 对象是按照“键值对”形式存储数据的，不同数据之间用","分隔
 struct json_object_t {
-    JSON_Value  *wrapping_value;
-    char       **names;
-    JSON_Value **values;
-    size_t       count;
-    size_t       capacity;
+    JSON_Value  *wrapping_value; // 当前 json object 所属 JSON_Value 的指针
+    char       **names;          // “键值对”中的“键”标识符
+    JSON_Value **values;         // “键值对”中的“值”标识符
+    size_t       count;          // 当前 json object 中已经存储的“键值对”个数
+    size_t       capacity;       // 当前 json object 最多可以存储的“键值对”个数
 };
 
+// 定义一个 json 数据中的“数组”表示形式
 struct json_array_t {
-    JSON_Value  *wrapping_value;
-    JSON_Value **items;
-    size_t       count;
-    size_t       capacity;
+    JSON_Value  *wrapping_value; // 当前 json array 所属 JSON_Value 的指针
+    JSON_Value **items;          // 当前 json array 中所包含的 JSON_Value 数组首地址
+    size_t       count;          // 当前 json array 中已经存储的 JSON_Value 成员个数
+    size_t       capacity;       // 当前 json array 最多可以经存储的 JSON_Value 成员个数
 };
 
 /* Various */
@@ -306,6 +322,9 @@ static char * read_file(const char * filename) {
     return file_contents;
 }
 
+// 从指定的字符串中移除和 json 数据无关的注释信息，注释信息指的是在起始标识符和结束标识符之间的内容
+// start_token 表示注释信息的起始标识符，例如 /* 和 //
+// end_token 表示注释信息的结束标识符 */ 和 \n
 static void remove_comments(char *string, const char *start_token, const char *end_token) {
     int in_string = 0, escaped = 0;
     size_t i;
@@ -342,6 +361,8 @@ static void remove_comments(char *string, const char *start_token, const char *e
 }
 
 /* JSON Object */
+// 创建并初始化一个 JSON Object 变量
+// wrapping_value 表示新创建的 JSON Object 所属 JSON_Value 指针
 static JSON_Object * json_object_init(JSON_Value *wrapping_value) {
     JSON_Object *new_obj = (JSON_Object*)parson_malloc(sizeof(JSON_Object));
     if (new_obj == NULL) {
@@ -355,6 +376,10 @@ static JSON_Object * json_object_init(JSON_Value *wrapping_value) {
     return new_obj;
 }
 
+// 向指定的 json object 中添加一个新的“键值对”成员
+// object 表示我们要操作的 json object 对象
+// name 表示“键值对”的“键”标识符
+// value 表示“键值对”的“值”标识符内容
 static JSON_Status json_object_add(JSON_Object *object, const char *name, JSON_Value *value) {
     if (name == NULL) {
         return JSONFailure;
@@ -362,6 +387,11 @@ static JSON_Status json_object_add(JSON_Object *object, const char *name, JSON_V
     return json_object_addn(object, name, strlen(name), value);
 }
 
+// 向指定的 json object 中添加一个新的“键值对”成员，需要我们指定“键”标识符的长度
+// object 表示我们要操作的 json object 对象
+// name 表示“键值对”的“键”标识符
+// name_len 表示“键值对”的“键”标识符长度
+// value 表示“键值对”的“值”标识符内容
 static JSON_Status json_object_addn(JSON_Object *object, const char *name, size_t name_len, JSON_Value *value) {
     size_t index = 0;
     if (object == NULL || name == NULL || value == NULL) {
@@ -387,6 +417,11 @@ static JSON_Status json_object_addn(JSON_Object *object, const char *name, size_
     return JSONSuccess;
 }
 
+// 把指定的 json object 的 capacity 设置成指定的新值
+// 一个 json object 可以按照“键值对”的方式存储数据，在指定的 json object 中 capacity 字段
+// 表示的是这个 json object 可以存储多少个“键值对”
+// object 表示我们要操作的 json object 对象
+// new_capacity 表示新的存储空间大小
 static JSON_Status json_object_resize(JSON_Object *object, size_t new_capacity) {
     char **temp_names = NULL;
     JSON_Value **temp_values = NULL;
@@ -417,6 +452,10 @@ static JSON_Status json_object_resize(JSON_Object *object, size_t new_capacity) 
     return JSONSuccess;
 }
 
+// 在指定的 json object 中，通过“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
+// object 表示我们要操作的 json object 对象
+// name 表示“键值对”的“键”标识符
+// name_len 表示“键值对”的“键”标识符长度
 static JSON_Value * json_object_getn_value(const JSON_Object *object, const char *name, size_t name_len) {
     size_t i, name_length;
     for (i = 0; i < json_object_get_count(object); i++) {
@@ -431,6 +470,10 @@ static JSON_Value * json_object_getn_value(const JSON_Object *object, const char
     return NULL;
 }
 
+// 从指定的 json object 中通过“键值对”的“键”标识符找到与其对应的成员并删除
+// object 表示我们要操作的 json object 对象
+// name 表示“键值对”的“键”标识符
+// free_value 表示是否释放“键值对”的“值”标识符占用的资源
 static JSON_Status json_object_remove_internal(JSON_Object *object, const char *name, int free_value) {
     size_t i = 0, last_item_index = 0;
     if (object == NULL || json_object_get_value(object, name) == NULL) {
@@ -454,6 +497,10 @@ static JSON_Status json_object_remove_internal(JSON_Object *object, const char *
     return JSONFailure; /* No execution path should end here */
 }
 
+// 从指定的 json object 中通过“点表示法”找到与其对应的成员并删除
+// object 表示我们要操作的 json object 对象
+// name 表示“键值对”的“键”标识符
+// free_value 表示是否释放“键值对”的“值”标识符占用的资源
 static JSON_Status json_object_dotremove_internal(JSON_Object *object, const char *name, int free_value) {
     JSON_Value *temp_value = NULL;
     JSON_Object *temp_object = NULL;
@@ -469,6 +516,8 @@ static JSON_Status json_object_dotremove_internal(JSON_Object *object, const cha
     return json_object_dotremove_internal(temp_object, dot_pos + 1, free_value);
 }
 
+// 释放一个 json object 类型成员所占用的所有内存空间
+// object 表示我们要释放的 json object 对象
 static void json_object_free(JSON_Object *object) {
     size_t i;
     for (i = 0; i < object->count; i++) {
@@ -524,6 +573,7 @@ static JSON_Status json_array_resize(JSON_Array *array, size_t new_capacity) {
     return JSONSuccess;
 }
 
+// 释放一个 json array 类型成员所占用的所有内存空间
 static void json_array_free(JSON_Array *array) {
     size_t i;
     for (i = 0; i < array->count; i++) {
@@ -671,6 +721,8 @@ error:
 
 /* Return processed contents of a string between quotes and
    skips passed argument to a matching quote. */
+// if arg string = "name": "John Smith"
+// return = name
 static char * get_quoted_string(const char **string) {
     const char *string_start = *string;
     size_t string_len = 0;
@@ -682,6 +734,9 @@ static char * get_quoted_string(const char **string) {
     return process_string(string_start + 1, string_len);
 }
 
+// 解析指定的 json 字符串数据
+// string 表示需要解析的 json 字符串
+// nesting 表示当前解析的 json 字符串在整个 json 数据中的嵌套层数
 static JSON_Value * parse_value(const char **string, size_t nesting) {
     if (nesting > MAX_NESTING) {
         return NULL;
@@ -874,6 +929,13 @@ static JSON_Value * parse_null_value(const char **string) {
                                   if (buf != NULL) { buf += written; }\
                                   written_total += written; } while(0)
 
+// 把指定的 json 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据
+// 并把转换后的结果存储到我们指定的缓存空间中
+// value 表示需要转换的“树形结构”json 数据
+// buf 表示用来存储转换后的、“序列化”格式的字符串缓冲区
+// level 表示在“序列化”的字符串中，不同 json 对象之间需要添加的空格数量，单位是 4 个空格
+// is_pretty 表示我们在“序列化”后的字符串中是否需要添加格式化空格来提高可阅读性
+// num_buf 表示用来存储 JSONNumber 类型变量值的缓冲区
 static int json_serialize_to_buffer_r(const JSON_Value *value, char *buf, int level, int is_pretty, char *num_buf)
 {
     const char *key = NULL, *string = NULL;
@@ -1119,6 +1181,9 @@ JSON_Value * json_parse_file_with_comments(const char *filename) {
     return output_value;
 }
 
+// 解析指定的 json 字符串数据（序列化格式）并转换成能表示 json 数据树形结构的表示形式
+// string 表示序列化格式的 json 字符串数据
+// return JSON_Value 表示和序列化 json 字符串对应的 json 数据结构表示形式的数据
 JSON_Value * json_parse_string(const char *string) {
     if (string == NULL) {
         return NULL;
@@ -1129,6 +1194,12 @@ JSON_Value * json_parse_string(const char *string) {
     return parse_value((const char**)&string, 0);
 }
 
+// 解析指定的 json 字符串数据（序列化格式）并转换成能表示 json 数据树形结构的表示形式
+// 这个函数除了包含解析 json 字符串功能外，还包含去除 json 字符串中注释信息的功能逻辑
+// 所以如果我们的 json 文件中不仅包含 json 原始数据，还包含了注释信息，那么我们就可以
+// 调用这个接口来解析
+// string 表示序列化格式的 json 字符串数据
+// return JSON_Value 表示和序列化 json 字符串对应的 json 数据结构表示形式的数据
 JSON_Value * json_parse_string_with_comments(const char *string) {
     JSON_Value *result = NULL;
     char *string_mutable_copy = NULL, *string_mutable_copy_ptr = NULL;
@@ -1307,6 +1378,7 @@ JSON_Value * json_value_get_parent (const JSON_Value *value) {
     return value ? value->parent : NULL;
 }
 
+// 释放 json “键值对”中的“值”标识符占用的内存资源
 void json_value_free(JSON_Value *value) {
     switch (json_value_get_type(value)) {
         case JSONObject:
@@ -1491,12 +1563,20 @@ JSON_Value * json_value_deep_copy(const JSON_Value *value) {
     }
 }
 
+// 计算对指定的“树形结构” json 数据“序列化”后的字符串所占用的内存空间大小
+// value 表示需要被转换的“树形结构” json 数据
+// return size_t 表示序列化后所需要的内存空间大小
 size_t json_serialization_size(const JSON_Value *value) {
     char num_buf[NUM_BUF_SIZE]; /* recursively allocating buffer on stack is a bad idea, so let's do it only once */
     int res = json_serialize_to_buffer_r(value, NULL, 0, 0, num_buf);
     return res < 0 ? 0 : (size_t)(res + 1);
 }
 
+// 把指定的 json 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据
+// 并把转换后的结果存储到我们指定的缓存空间中
+// value 表示需要转换的“树形结构” json 数据
+// buf 表示用来存储转换后的、“序列化”格式的字符串缓冲区
+// buf_size_in_bytes 表示用来存储“序列化”字符串的缓冲区空间大小
 JSON_Status json_serialize_to_buffer(const JSON_Value *value, char *buf, size_t buf_size_in_bytes) {
     int written = -1;
     size_t needed_size_in_bytes = json_serialization_size(value);
@@ -1510,6 +1590,10 @@ JSON_Status json_serialize_to_buffer(const JSON_Value *value, char *buf, size_t 
     return JSONSuccess;
 }
 
+// 把指定的 json 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据
+// 并把转换后的结果存储到我们指定的文件中
+// value 表示需要转换的“树形结构” json 数据
+// filename 表示用来存储转换后的、“序列化”格式的字符串文件名
 JSON_Status json_serialize_to_file(const JSON_Value *value, const char *filename) {
     JSON_Status return_code = JSONSuccess;
     FILE *fp = NULL;
@@ -1532,6 +1616,8 @@ JSON_Status json_serialize_to_file(const JSON_Value *value, const char *filename
     return return_code;
 }
 
+// 把指定的 json 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据，并返回字符串首地址
+// value 表示需要转换的“树形结构” json 数据
 char * json_serialize_to_string(const JSON_Value *value) {
     JSON_Status serialization_result = JSONFailure;
     size_t buf_size_bytes = json_serialization_size(value);
