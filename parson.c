@@ -42,7 +42,7 @@
 // json 对象和 json 数组在创建之后的默认大小（可存储成员个数）
 #define STARTING_CAPACITY 16
 
-// 表示 json 数据结构中支持的最大嵌套层数
+// 表示 json 数据结构中支持的最大嵌套层数（或者说是在树形表示法中树的深度）
 #define MAX_NESTING       2048
 
 #define FLOAT_FORMAT "%1.17g" /* do not increase precision without incresing NUM_BUF_SIZE */
@@ -105,7 +105,7 @@ struct json_object_t {
     size_t       capacity;       // 当前 json object 最多可以存储的“键值对”个数
 };
 
-// 定义一个 json 数据中的“数组”表示形式
+// 定义一个 json 数据中的“数组”表示形式，数组中每个表示单位是 JSON_Value
 struct json_array_t {
     JSON_Value  *wrapping_value; // 当前 json array 所属 JSON_Value 的指针
     JSON_Value **items;          // 当前 json array 中所包含的 JSON_Value 数组首地址
@@ -178,6 +178,7 @@ static char * parson_strdup(const char *string) {
     return parson_strndup(string, strlen(string));
 }
 
+// 把指定的 hex 格式字符转换成与其对应的 int 类型变量
 static int hex_char_to_int(char c) {
     if (c >= '0' && c <= '9') {
         return c - '0';
@@ -189,6 +190,9 @@ static int hex_char_to_int(char c) {
     return -1;
 }
 
+// 把以   hex 字符串格式表示的 utf16 数据转换成与其对应的 int 类型值
+// s 表示 hex 字符串格式的 utf16 数据
+// result 表示转换成 int 类型的结果
 static int parse_utf16_hex(const char *s, unsigned int *result) {
     int x1, x2, x3, x4;
     if (s[0] == '\0' || s[1] == '\0' || s[2] == '\0' || s[3] == '\0') {
@@ -530,6 +534,8 @@ static void json_object_free(JSON_Object *object) {
 }
 
 /* JSON Array */
+// 创建并初始化一个 JSON Array 变量
+// wrapping_value 表示新创建的 JSON Array 所属 JSON_Value 指针
 static JSON_Array * json_array_init(JSON_Value *wrapping_value) {
     JSON_Array *new_array = (JSON_Array*)parson_malloc(sizeof(JSON_Array));
     if (new_array == NULL) {
@@ -542,6 +548,9 @@ static JSON_Array * json_array_init(JSON_Value *wrapping_value) {
     return new_array;
 }
 
+// 向指定的 json array 中添加一个新的 JSON_Value 成员
+// array 表示我们要操作的 json array 对象
+// value 表示新添加的数组成员单位
 static JSON_Status json_array_add(JSON_Array *array, JSON_Value *value) {
     if (array->count >= array->capacity) {
         size_t new_capacity = MAX(array->capacity * 2, STARTING_CAPACITY);
@@ -555,6 +564,11 @@ static JSON_Status json_array_add(JSON_Array *array, JSON_Value *value) {
     return JSONSuccess;
 }
 
+// 把指定的 json array 的 capacity 设置成指定的新值
+// 一个 json array 可以按照数组的方式存储 JSON_Value 数据，在指定的 json array 中 capacity 字段
+// 表示的是这个 json array 可以存储多少个 JSON_Value
+// array 表示我们要操作的 json array 对象
+// new_capacity 表示新的存储空间大小
 static JSON_Status json_array_resize(JSON_Array *array, size_t new_capacity) {
     JSON_Value **new_items = NULL;
     if (new_capacity == 0) {
@@ -584,6 +598,8 @@ static void json_array_free(JSON_Array *array) {
 }
 
 /* JSON Value */
+// 创建并初始化一个         string 类型的 JSON_Value 变量
+// string 表示新创建的变量需要初始化成的内容
 static JSON_Value * json_value_init_string_no_copy(char *string) {
     JSON_Value *new_value = (JSON_Value*)parson_malloc(sizeof(JSON_Value));
     if (!new_value) {
@@ -596,6 +612,10 @@ static JSON_Value * json_value_init_string_no_copy(char *string) {
 }
 
 /* Parser */
+// 找到第一个双引号对的位置，比如函数参数的内容为：
+// "name" : "zhaogezhang"，在调用完这个函数之后，*string 指向的位置如下：
+//       ^
+// 即第一个双引号对后的第一个字符位置
 static JSON_Status skip_quotes(const char **string) {
     if (**string != '\"') {
         return JSONFailure;
@@ -616,6 +636,9 @@ static JSON_Status skip_quotes(const char **string) {
     return JSONSuccess;
 }
 
+// 把 utf16 编码格式数据转换成与其对应的字符串格式数据
+// unprocessed 表示需要被转换的 utf16 格式编码数据
+// processed 表示存储转换结果的缓冲区
 static int parse_utf16(const char **unprocessed, char **processed) {
     unsigned int cp, lead, trail;
     int parse_succeeded = 0;
@@ -665,6 +688,9 @@ static int parse_utf16(const char **unprocessed, char **processed) {
 
 /* Copies and processes passed string up to supplied length.
 Example: "\u006Corem ipsum" -> lorem ipsum */
+// 把不同格式的输入字符串数据转换成与其对应的 ascii 字符串格式
+// input 表示需要转换的不同格式数据
+// len 表示我们需要转换的字符长度
 static char* process_string(const char *input, size_t len) {
     const char *input_ptr = input;
     size_t initial_size = (len + 1) * sizeof(char);
@@ -762,6 +788,10 @@ static JSON_Value * parse_value(const char **string, size_t nesting) {
     }
 }
 
+// 把“序列化”格式的字符串 JSON object 解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
+// string 表示需要解析的“序列化”格式的字符串
+// nesting 表示当前 JSON object 在整个 JSON 数据中的嵌套层数
+// return JSON_Value 表示转换后的“树形结构”格式的 JSON_Value 数据
 static JSON_Value * parse_object_value(const char **string, size_t nesting) {
     JSON_Value *output_value = NULL, *new_value = NULL;
     JSON_Object *output_object = NULL;
@@ -824,6 +854,10 @@ static JSON_Value * parse_object_value(const char **string, size_t nesting) {
     return output_value;
 }
 
+// 把“序列化”格式的字符串 JSON array 解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
+// string 表示需要解析的“序列化”格式的字符串
+// nesting 表示当前 JSON array 在整个 JSON 数据中的嵌套层数
+// return JSON_Value 表示转换后的“树形结构”格式的 JSON_Value 数据
 static JSON_Value * parse_array_value(const char **string, size_t nesting) {
     JSON_Value *output_value = NULL, *new_array_value = NULL;
     JSON_Array *output_array = NULL;
@@ -870,6 +904,9 @@ static JSON_Value * parse_array_value(const char **string, size_t nesting) {
     return output_value;
 }
 
+// 把“序列化”的双引号格式的 JSON string 解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
+// string 表示需要解析的“序列化”的双引号格式的字符串
+// return JSON_Value 表示转换后的“树形结构”格式的 JSON_String 数据
 static JSON_Value * parse_string_value(const char **string) {
     JSON_Value *value = NULL;
     char *new_string = get_quoted_string(string);
@@ -884,6 +921,9 @@ static JSON_Value * parse_string_value(const char **string) {
     return value;
 }
 
+// 把“序列化”的 JSON bool 类型变量解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
+// string 表示需要解析的“序列化”的 JSON bool 字符串
+// return JSON_Value 表示转换后的“树形结构”格式的 JSON_Bool 数据
 static JSON_Value * parse_boolean_value(const char **string) {
     size_t true_token_size = SIZEOF_TOKEN("true");
     size_t false_token_size = SIZEOF_TOKEN("false");
@@ -897,6 +937,9 @@ static JSON_Value * parse_boolean_value(const char **string) {
     return NULL;
 }
 
+// 把“序列化”的 JSON number 类型变量解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
+// string 表示需要解析的“序列化”的 JSON number 字符串
+// return JSON_Value 表示转换后的“树形结构”格式的 JSON_Number 数据
 static JSON_Value * parse_number_value(const char **string) {
     char *end;
     double number = 0;
@@ -909,6 +952,9 @@ static JSON_Value * parse_number_value(const char **string) {
     return json_value_init_number(number);
 }
 
+// 把“序列化”的 JSON null 类型变量解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
+// string 表示需要解析的“序列化”的 JSON null 字符串
+// return JSON_Value 表示转换后的“树形结构”格式的 JSON_Null 数据
 static JSON_Value * parse_null_value(const char **string) {
     size_t token_size = SIZEOF_TOKEN("null");
     if (strncmp("null", *string, token_size) == 0) {
@@ -1396,6 +1442,8 @@ void json_value_free(JSON_Value *value) {
     parson_free(value);
 }
 
+// 创建并初始化一个 JSON_Object 类型的 JSON_Value 变量
+// return JSON_Value 表示成功创建的 JSON_Object 变量
 JSON_Value * json_value_init_object(void) {
     JSON_Value *new_value = (JSON_Value*)parson_malloc(sizeof(JSON_Value));
     if (!new_value) {
@@ -1411,6 +1459,8 @@ JSON_Value * json_value_init_object(void) {
     return new_value;
 }
 
+// 创建并初始化一个 JSON_Array 类型的 JSON_Value 变量
+// return JSON_Value 表示成功创建的 JSON_Array 变量
 JSON_Value * json_value_init_array(void) {
     JSON_Value *new_value = (JSON_Value*)parson_malloc(sizeof(JSON_Value));
     if (!new_value) {
@@ -1426,6 +1476,9 @@ JSON_Value * json_value_init_array(void) {
     return new_value;
 }
 
+// 创建并初始化一个 JSON_String 类型的 JSON_Value 变量
+// string 表示 JSON_String 类型的 JSON_Value 变量初始值
+// return JSON_Value 表示成功创建的 JSON_String 变量
 JSON_Value * json_value_init_string(const char *string) {
     char *copy = NULL;
     JSON_Value *value;
@@ -1448,6 +1501,9 @@ JSON_Value * json_value_init_string(const char *string) {
     return value;
 }
 
+// 创建并初始化一个 JSON_Number 类型的 JSON_Value 变量
+// number 表示 JSON_Number 类型的 JSON_Value 变量初始值
+// return JSON_Value 表示成功创建的 JSON_Number 变量
 JSON_Value * json_value_init_number(double number) {
     JSON_Value *new_value = NULL;
     if (IS_NUMBER_INVALID(number)) {
@@ -1463,6 +1519,9 @@ JSON_Value * json_value_init_number(double number) {
     return new_value;
 }
 
+// 创建并初始化一个 JSON_Bool 类型的 JSON_Value 变量
+// boolean 表示 JSON_Bool 类型的 JSON_Value 变量初始值
+// return JSON_Value 表示成功创建的 JSON_Bool 变量
 JSON_Value * json_value_init_boolean(int boolean) {
     JSON_Value *new_value = (JSON_Value*)parson_malloc(sizeof(JSON_Value));
     if (!new_value) {
@@ -1474,6 +1533,8 @@ JSON_Value * json_value_init_boolean(int boolean) {
     return new_value;
 }
 
+// 创建并初始化一个 JSON_Null 类型的 JSON_Value 变量
+// return JSON_Value 表示成功创建的 JSON_Null 变量
 JSON_Value * json_value_init_null(void) {
     JSON_Value *new_value = (JSON_Value*)parson_malloc(sizeof(JSON_Value));
     if (!new_value) {
