@@ -293,6 +293,9 @@ static int is_decimal(const char *string, size_t length) {
     return 1;
 }
 
+// 读取指定 JSON 文件名的数据到动态分配的缓冲区中，并返回这个缓冲区首地址
+// filename 表示要读取的 json 文件名
+// return char 表示读取到 json 数据的缓冲区首地址
 static char * read_file(const char * filename) {
     FILE *fp = fopen(filename, "r");
     size_t size_to_read = 0;
@@ -460,6 +463,7 @@ static JSON_Status json_object_resize(JSON_Object *object, size_t new_capacity) 
 // object 表示我们要操作的 json object 对象
 // name 表示“键值对”的“键”标识符
 // name_len 表示“键值对”的“键”标识符长度
+// return JSON_Value 表示读取到的 JSON_Value 变量
 static JSON_Value * json_object_getn_value(const JSON_Object *object, const char *name, size_t name_len) {
     size_t i, name_length;
     for (i = 0; i < json_object_get_count(object); i++) {
@@ -1118,6 +1122,10 @@ static int json_serialize_to_buffer_r(const JSON_Value *value, char *buf, int le
     }
 }
 
+// 把指定的 json string 数据转换成与其对应的“序列化”格式的字符串数据并把转换后的结果
+// 存储到我们指定的缓存空间中（常常用于序列化“键值对”中的“键”描述符字段）
+// string 表示我们需要序列化的 json string 字符串
+// buf 表示存储序列化后结果的缓冲区起始地址
 static int json_serialize_string(const char *string, char *buf) {
     size_t i = 0, len = strlen(string);
     char c = '\0';
@@ -1185,6 +1193,9 @@ static int json_serialize_string(const char *string, char *buf) {
     return written_total;
 }
 
+// 向指定的缓冲区中追加指定个数的空格块，每个空格块包含 4 个空格字符
+// buf 表示我们要追加空格块的缓冲区起始地址
+// level 表示我们要追加的空格块个数
 static int append_indent(char *buf, int level) {
     int i;
     int written = -1, written_total = 0;
@@ -1194,6 +1205,9 @@ static int append_indent(char *buf, int level) {
     return written_total;
 }
 
+// 把指定的字符串追加到指定的缓冲区中
+// buf 表示我们要追加字符串的缓冲区起始地址
+// string 表示我们要向缓冲区中追加的字符串内容
 static int append_string(char *buf, const char *string) {
     if (buf == NULL) {
         return (int)strlen(string);
@@ -1205,6 +1219,10 @@ static int append_string(char *buf, const char *string) {
 #undef APPEND_INDENT
 
 /* Parser API */
+// 读取指定的 json 文件内容（序列化格式）并把读取到的“序列化”格式 json 数据解析并转换
+// 成“树形结构” json 表示格式
+// filename 表示存储“序列化”格式 json 数据的文件名
+// return JSON_Value 表示解析转换后的“树形结构” json 数据
 JSON_Value * json_parse_file(const char *filename) {
     char *file_contents = read_file(filename);
     JSON_Value *output_value = NULL;
@@ -1216,6 +1234,12 @@ JSON_Value * json_parse_file(const char *filename) {
     return output_value;
 }
 
+// 读取指定的 json 文件内容（序列化格式）并把读取到的“序列化”格式 json 数据解析并转换
+// 成“树形结构” json 表示格式这个函数除了包含解析 json 字符串功能外，还包含去除 json 
+// 字符串中注释信息的功能逻辑所以如果我们的 json 文件中不仅包含 json 原始数据，还包含
+// 了注释信息，那么我们就可以调用这个接口来解析
+// filename 表示存储“序列化”格式 json 数据的文件名
+// return JSON_Value 表示解析转换后的“树形结构” json 数据
 JSON_Value * json_parse_file_with_comments(const char *filename) {
     char *file_contents = read_file(filename);
     JSON_Value *output_value = NULL;
@@ -1262,7 +1286,10 @@ JSON_Value * json_parse_string_with_comments(const char *string) {
 }
 
 /* JSON Object API */
-
+// 在指定的 json object 中，通过“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
+// object 表示我们要操作的 json object 对象
+// name 表示“键值对”的“键”标识符
+// return JSON_Value 表示读取到的 JSON_Value 变量
 JSON_Value * json_object_get_value(const JSON_Object *object, const char *name) {
     if (object == NULL || name == NULL) {
         return NULL;
@@ -1270,26 +1297,50 @@ JSON_Value * json_object_get_value(const JSON_Object *object, const char *name) 
     return json_object_getn_value(object, name, strlen(name));
 }
 
+// 在指定的 json object 中，通过 JSONString 类型变量的“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
+// object 表示我们要操作的 json object 对象
+// name 表示“键值对”的“键”标识符
+// return char 表示读取到的 JSONString 类型 string 变量值
 const char * json_object_get_string(const JSON_Object *object, const char *name) {
     return json_value_get_string(json_object_get_value(object, name));
 }
 
+// 在指定的 json object 中，通过 JSONNumber 类型变量的“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
+// object 表示我们要操作的 json object 对象
+// name 表示“键值对”的“键”标识符
+// return double 表示读取到的 JSONNumber 类型 number 变量值
 double json_object_get_number(const JSON_Object *object, const char *name) {
     return json_value_get_number(json_object_get_value(object, name));
 }
 
+// 在指定的 json object 中，通过 JSONObject 类型变量的“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
+// object 表示我们要操作的 json object 对象
+// name 表示“键值对”的“键”标识符
+// return JSON_Object 表示读取到的 JSONObject 类型 object 变量值
 JSON_Object * json_object_get_object(const JSON_Object *object, const char *name) {
     return json_value_get_object(json_object_get_value(object, name));
 }
 
+// 在指定的 json object 中，通过 JSONArray 类型变量的“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
+// object 表示我们要操作的 json object 对象
+// name 表示“键值对”的“键”标识符
+// return JSON_Array 表示读取到的 JSONArray 类型 array 变量值
 JSON_Array * json_object_get_array(const JSON_Object *object, const char *name) {
     return json_value_get_array(json_object_get_value(object, name));
 }
 
+// 在指定的 json object 中，通过 JSONBoolean 类型变量的“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
+// object 表示我们要操作的 json object 对象
+// name 表示“键值对”的“键”标识符
+// return int 表示读取到的 JSONBoolean 类型 boolean 变量值
 int json_object_get_boolean(const JSON_Object *object, const char *name) {
     return json_value_get_boolean(json_object_get_value(object, name));
 }
 
+// 在指定的 json object 中，通过“点”描述法获取对应路径位置上的 JSON_Value 变量
+// object 表示我们要操作的 json object 对象
+// name 表示“点”描述法的 JSON_Value 变量路径
+// return JSON_Value 表示读取到的 JSON_Value 变量
 JSON_Value * json_object_dotget_value(const JSON_Object *object, const char *name) {
     const char *dot_position = strchr(name, '.');
     if (!dot_position) {
@@ -1299,30 +1350,52 @@ JSON_Value * json_object_dotget_value(const JSON_Object *object, const char *nam
     return json_object_dotget_value(object, dot_position + 1);
 }
 
+// 在指定的 json object 中，通过 JSONString 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
+// object 表示我们要操作的 json object 对象
+// name 表示“点”描述法的 JSON_Value 变量路径
+// return char 表示读取到的 JSONString 类型 string 变量值
 const char * json_object_dotget_string(const JSON_Object *object, const char *name) {
     return json_value_get_string(json_object_dotget_value(object, name));
 }
 
+// 在指定的 json object 中，通过 JSONNumber 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
+// object 表示我们要操作的 json object 对象
+// name 表示“点”描述法的 JSON_Value 变量路径
+// return double 表示读取到的 JSONNumber 类型 number 变量值
 double json_object_dotget_number(const JSON_Object *object, const char *name) {
     return json_value_get_number(json_object_dotget_value(object, name));
 }
 
+// 在指定的 json object 中，通过 JSONObject 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
+// object 表示我们要操作的 json object 对象
+// name 表示“点”描述法的 JSON_Value 变量路径
+// return JSON_Object 表示读取到的 JSONObject 类型 object 变量值
 JSON_Object * json_object_dotget_object(const JSON_Object *object, const char *name) {
     return json_value_get_object(json_object_dotget_value(object, name));
 }
 
+// 在指定的 json object 中，通过 JSONArray 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
+// object 表示我们要操作的 json object 对象
+// name 表示“点”描述法的 JSON_Value 变量路径
+// return JSON_Array 表示读取到的 JSONArray 类型 array 变量值
 JSON_Array * json_object_dotget_array(const JSON_Object *object, const char *name) {
     return json_value_get_array(json_object_dotget_value(object, name));
 }
 
+// 在指定的 json object 中，通过 JSONBoolean 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
+// object 表示我们要操作的 json object 对象
+// name 表示“点”描述法的 JSON_Value 变量路径
+// return int 表示读取到的 JSONBoolean 类型 boolean 变量值
 int json_object_dotget_boolean(const JSON_Object *object, const char *name) {
     return json_value_get_boolean(json_object_dotget_value(object, name));
 }
 
+// 获取指定 json object 中已经存储的“键值对”个数
 size_t json_object_get_count(const JSON_Object *object) {
     return object ? object->count : 0;
 }
 
+// 获取指定 json object 中指定索引位置的“键值对”的“键”标识符内容
 const char * json_object_get_name(const JSON_Object *object, size_t index) {
     if (object == NULL || index >= json_object_get_count(object)) {
         return NULL;
@@ -1330,6 +1403,7 @@ const char * json_object_get_name(const JSON_Object *object, size_t index) {
     return object->names[index];
 }
 
+// 获取指定 json object 中指定索引位置的“键值对”的“值”标识符内容
 JSON_Value * json_object_get_value_at(const JSON_Object *object, size_t index) {
     if (object == NULL || index >= json_object_get_count(object)) {
         return NULL;
@@ -1337,29 +1411,35 @@ JSON_Value * json_object_get_value_at(const JSON_Object *object, size_t index) {
     return object->values[index];
 }
 
+// 获取指定 json object 所属的 JSON_Value 的指针
 JSON_Value *json_object_get_wrapping_value(const JSON_Object *object) {
     return object->wrapping_value;
 }
 
+// 判断指定的 json object 中是否存在指定“键”标识符的“键值对”数据内容
 int json_object_has_value (const JSON_Object *object, const char *name) {
     return json_object_get_value(object, name) != NULL;
 }
 
+// 判断指定的 json object 中是否存在指定“键”标识符及 JSON_Value_Type 的“键值对”数据内容
 int json_object_has_value_of_type(const JSON_Object *object, const char *name, JSON_Value_Type type) {
     JSON_Value *val = json_object_get_value(object, name);
     return val != NULL && json_value_get_type(val) == type;
 }
 
+// 判断指定的 json object 中是否存在“点”描述法指定的“键值对”数据内容
 int json_object_dothas_value (const JSON_Object *object, const char *name) {
     return json_object_dotget_value(object, name) != NULL;
 }
 
+// 判断指定的 json object 中是否存在“点”描述法及 JSON_Value_Type 指定的“键值对”数据内容
 int json_object_dothas_value_of_type(const JSON_Object *object, const char *name, JSON_Value_Type type) {
     JSON_Value *val = json_object_dotget_value(object, name);
     return val != NULL && json_value_get_type(val) == type;
 }
 
 /* JSON Array API */
+// 获取指定的 json array 中指定索引位置处的 JSON_Value 成员数据内容
 JSON_Value * json_array_get_value(const JSON_Array *array, size_t index) {
     if (array == NULL || index >= json_array_get_count(array)) {
         return NULL;
@@ -1367,59 +1447,88 @@ JSON_Value * json_array_get_value(const JSON_Array *array, size_t index) {
     return array->items[index];
 }
 
+// 在指定的 json array 中，通过 JSONString 类型变量的“索引下标值”获取与其对应的内容
+// array 表示我们要操作的 json array 对象
+// index 表示 JSONString 类型变量的“索引下标值”
+// return char 表示读取到的 JSONString 类型 string 变量值
 const char * json_array_get_string(const JSON_Array *array, size_t index) {
     return json_value_get_string(json_array_get_value(array, index));
 }
 
+// 在指定的 json array 中，通过 JSONNumber 类型变量的“索引下标值”获取与其对应的内容
+// array 表示我们要操作的 json array 对象
+// index 表示 JSONNumber 类型变量的“索引下标值”
+// return double 表示读取到的 JSONNumber 类型 number 变量值
 double json_array_get_number(const JSON_Array *array, size_t index) {
     return json_value_get_number(json_array_get_value(array, index));
 }
 
+// 在指定的 json array 中，通过 JSONObject 类型变量的“索引下标值”获取与其对应的内容
+// array 表示我们要操作的 json array 对象
+// index 表示 JSONObject 类型变量的“索引下标值”
+// return JSON_Object 表示读取到的 JSONObject 类型 object 变量值
 JSON_Object * json_array_get_object(const JSON_Array *array, size_t index) {
     return json_value_get_object(json_array_get_value(array, index));
 }
 
+// 在指定的 json array 中，通过 JSONArray 类型变量的“索引下标值”获取与其对应的内容
+// array 表示我们要操作的 json array 对象
+// index 表示 JSONArray 类型变量的“索引下标值”
+// return JSON_Array 表示读取到的 JSONArray 类型 array 变量值
 JSON_Array * json_array_get_array(const JSON_Array *array, size_t index) {
     return json_value_get_array(json_array_get_value(array, index));
 }
 
+// 在指定的 json array 中，通过 JSONBoolean 类型变量的“索引下标值”获取与其对应的内容
+// array 表示我们要操作的 json array 对象
+// index 表示 JSONBoolean 类型变量的“索引下标值”
+// return int 表示读取到的 JSONBoolean 类型 boolean 变量值
 int json_array_get_boolean(const JSON_Array *array, size_t index) {
     return json_value_get_boolean(json_array_get_value(array, index));
 }
 
+// 获取指定的 JSON_Array 中已经存储的 JSON_Value 成员个数
 size_t json_array_get_count(const JSON_Array *array) {
     return array ? array->count : 0;
 }
 
+// 获取指定的 JSON_Array 所属 JSON_Value 的指针
 JSON_Value * json_array_get_wrapping_value(const JSON_Array *array) {
     return array->wrapping_value;
 }
 
 /* JSON Value API */
+// 获取指定 JSON_Value 对应的变量类型
 JSON_Value_Type json_value_get_type(const JSON_Value *value) {
     return value ? value->type : JSONError;
 }
 
+// 获取指定的 JSONObject 类型的 JSON_Value 所对应的变量值
 JSON_Object * json_value_get_object(const JSON_Value *value) {
     return json_value_get_type(value) == JSONObject ? value->value.object : NULL;
 }
 
+// 获取指定的 JSONArray 类型的 JSON_Value 所对应的变量值
 JSON_Array * json_value_get_array(const JSON_Value *value) {
     return json_value_get_type(value) == JSONArray ? value->value.array : NULL;
 }
 
+// 获取指定的 JSONString 类型的 JSON_Value 所对应的变量值
 const char * json_value_get_string(const JSON_Value *value) {
     return json_value_get_type(value) == JSONString ? value->value.string : NULL;
 }
 
+// 获取指定的 JSONNumber 类型的 JSON_Value 所对应的变量值
 double json_value_get_number(const JSON_Value *value) {
     return json_value_get_type(value) == JSONNumber ? value->value.number : 0;
 }
 
+// 获取指定的 JSONBoolean 类型的 JSON_Value 所对应的变量值
 int json_value_get_boolean(const JSON_Value *value) {
     return json_value_get_type(value) == JSONBoolean ? value->value.boolean : -1;
 }
 
+// 获取指定 JSON_Value 在“树形结构”表示形式中父节点的指针
 JSON_Value * json_value_get_parent (const JSON_Value *value) {
     return value ? value->parent : NULL;
 }
