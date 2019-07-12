@@ -2347,7 +2347,8 @@ JSON_Status json_object_clear(JSON_Object *object) {
 
 // 校验指定的“树形结构” JSON 数据是否符合指定的 JSON 模式，所谓的 JSON 模式是定义了
 // “树形结构” JSON 数据需要包含哪些字段以及每个字段的数据类型是什么，即“树形结构”
-// JSON 需要按照什么样的规则、或表现形式来组织数据
+// JSON 需要按照什么样的规则、或表现形式来组织数据，详细介绍查看如下链接：
+// https://json-schema.org/understanding-json-schema/about.html#about
 // schema 表示 JSON 模式数据
 // value 表示需要校验的“树形结构” JSON 数据
 // return JSON_Status 表示 JSON 数据是否符合 JSON 模式数据
