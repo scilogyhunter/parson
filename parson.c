@@ -39,10 +39,10 @@
  * don't have to. */
 #define sscanf THINK_TWICE_ABOUT_USING_SSCANF
 
-// JSON 对象和 JSON 数组在创建之后的默认大小（可存储成员个数）
+/* JSON 对象和 JSON 数组在创建之后的默认大小（可存储成员个数）*/
 #define STARTING_CAPACITY 16
 
-// 表示 JSON 数据结构中支持的最大嵌套层数（或者说是在树形表示法中树的深度）
+/* 表示 JSON 数据结构中支持的最大嵌套层数（或者说是在树形表示法中树的深度）*/
 #define MAX_NESTING       2048
 
 #define FLOAT_FORMAT "%1.17g" /* do not increase precision without incresing NUM_BUF_SIZE */
@@ -70,15 +70,18 @@ static int parson_escape_slashes = 1;
 #define IS_CONT(b) (((unsigned char)(b) & 0xC0) == 0x80) /* is utf-8 continuation byte */
 
 /* Type definitions */
-// 下面这定义了用     “树形结构”表示 JSON 数据需要的几个基础数据类型
-// 通过这些数据类型，我们可以把指定的 JSON 数据组织成树形结构并
-// 动态添加、移除或者修改 JSON 数据成员，需要注意的是这个树形结
-// 构表示了 JSON 数据成员之间的结构化关系，所以我们在这个基础上
-// 需要执行一个“序列化”操作后，才会形成字符串格式的 JSON 数据
-// 在我们对 JSON 数据结构动态操作时，需要动态内存管理的基础支持
-// 以实现动态创建和释放 JSON 数据成员结构
 
-// 定义了 JSON 数据中会用到的几种“变量类型”
+/*
+ * 下面这定义了用     “树形结构”表示 JSON 数据需要的几个基础数据类型
+ * 通过这些数据类型，我们可以把指定的 JSON 数据组织成树形结构并
+ * 动态添加、移除或者修改 JSON 数据成员，需要注意的是这个树形结
+ * 构表示了 JSON 数据成员之间的结构化关系，所以我们在这个基础上
+ * 需要执行一个“序列化”操作后，才会形成字符串格式的 JSON 数据
+ * 在我们对 JSON 数据结构动态操作时，需要动态内存管理的基础支持
+ * 以实现动态创建和释放 JSON 数据成员结构
+ */
+
+/* 定义了 JSON 数据中会用到的几种“变量类型” */
 typedef union json_value_value {
     char        *string;
     double       number;
@@ -88,29 +91,31 @@ typedef union json_value_value {
     int          null;
 } JSON_Value_Value;
 
-// 定义一个 JSON 数据中的“变量”表示形式
+/* 定义一个 JSON 数据中的“变量”表示形式 */
 struct json_value_t {
-    JSON_Value      *parent;     // 当前 JSON_Value 在“树形结构”表示中父节点指针 
-    JSON_Value_Type  type;       // 当前 JSON_Value 变量类型
-    JSON_Value_Value value;      // 当前 JSON_Value 变量值
+    JSON_Value      *parent;     /* 当前 JSON_Value 在“树形结构”表示中父节点指针 */
+    JSON_Value_Type  type;       /* 当前 JSON_Value 变量类型 */
+    JSON_Value_Value value;      /* 当前 JSON_Value 变量值 */
 };
 
-// 定义一个 JSON 数据中的“对象”表示形式
-// JSON 对象是按照“键值对”形式存储数据的，不同数据之间用","分隔
+/*
+ * 定义一个 JSON 数据中的“对象”表示形式
+ * JSON 对象是按照“键值对”形式存储数据的，不同数据之间用","分隔
+ */
 struct json_object_t {
-    JSON_Value  *wrapping_value; // 当前 JSON object 所属 JSON_Value 的指针
-    char       **names;          // “键值对”中的“键”标识符
-    JSON_Value **values;         // “键值对”中的“值”标识符
-    size_t       count;          // 当前 JSON object 中已经存储的“键值对”个数
-    size_t       capacity;       // 当前 JSON object 最多可以存储的“键值对”个数
+    JSON_Value  *wrapping_value; /* 当前 JSON object 所属 JSON_Value 的指针 */
+    char       **names;          /* “键值对”中的“键”标识符 */
+    JSON_Value **values;         /* “键值对”中的“值”标识符 */
+    size_t       count;          /* 当前 JSON object 中已经存储的“键值对”个数 */
+    size_t       capacity;       /* 当前 JSON object 最多可以存储的“键值对”个数 */
 };
 
-// 定义一个 JSON 数据中的“数组”表示形式，数组中每个表示单位是 JSON_Value
+/* 定义一个 JSON 数据中的“数组”表示形式，数组中每个表示单位是 JSON_Value */
 struct json_array_t {
-    JSON_Value  *wrapping_value; // 当前 JSON array 所属 JSON_Value 的指针
-    JSON_Value **items;          // 当前 JSON array 中所包含的 JSON_Value 数组首地址
-    size_t       count;          // 当前 JSON array 中已经存储的 JSON_Value 成员个数
-    size_t       capacity;       // 当前 JSON array 最多可以经存储的 JSON_Value 成员个数
+    JSON_Value  *wrapping_value; /* 当前 JSON array 所属 JSON_Value 的指针 */
+    JSON_Value **items;          /* 当前 JSON array 中所包含的 JSON_Value 数组首地址 */
+    size_t       count;          /* 当前 JSON array 中已经存储的 JSON_Value 成员个数 */
+    size_t       capacity;       /* 当前 JSON array 最多可以经存储的 JSON_Value 成员个数 */
 };
 
 /* Various */
@@ -164,7 +169,16 @@ static int    append_indent(char *buf, int level);
 static int    append_string(char *buf, const char *string);
 
 /* Various */
-// 分配内存并复制指定字符串的指定个数字符数据，然后返回字符串首地址
+/*********************************************************************************************************
+** 函数名称: parson_strndup
+** 功能描述: 分配内存并复制指定字符串的指定个数字符数据，然后返回字符串首地址
+** 输     入: string - 要复制的字符串指针
+**         : n - 要复制的字符创长度
+** 输     出: output_string - 复制后的字符串指针
+**         : NULL - 复制字符串失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static char * parson_strndup(const char *string, size_t n) {
     char *output_string = (char*)parson_malloc(n + 1);
     if (!output_string) {
@@ -175,12 +189,28 @@ static char * parson_strndup(const char *string, size_t n) {
     return output_string;
 }
 
-// 分配内存并复制指定字符串数据，然后返回字符串首地址
+/*********************************************************************************************************
+** 函数名称: parson_strdup
+** 功能描述: 分配内存并复制指定字符串数据，然后返回字符串首地址
+** 输     入: string - 要复制的字符串指针
+** 输     出: output_string - 复制后的字符串指针
+**         : NULL - 复制字符串失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static char * parson_strdup(const char *string) {
     return parson_strndup(string, strlen(string));
 }
 
-// 把指定的 hex 格式字符转换成与其对应的 int 类型变量
+/*********************************************************************************************************
+** 函数名称: hex_char_to_int
+** 功能描述: 把指定的 hex 格式字符转换成与其对应的 ASCII 码值
+** 输     入: c - hex 格式字符
+** 输     出: int - 转换后的 ASCII 码值
+**         : -1 - 输入字符非法
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static int hex_char_to_int(char c) {
     if (c >= '0' && c <= '9') {
         return c - '0';
@@ -192,9 +222,16 @@ static int hex_char_to_int(char c) {
     return -1;
 }
 
-// 把以   hex 字符串格式表示的 utf16 数据转换成与其对应的 int 类型值
-// s 表示 hex 字符串格式的 utf16 数据
-// result 表示转换成 int 类型的结果
+/*********************************************************************************************************
+** 函数名称: parse_utf16_hex
+** 功能描述: 把以 hex 字符串格式表示的 utf16 数据转换成与其对应的 int 类型值
+** 输     入: s - hex 字符串格式的 utf16 数据
+** 输     出: result - 转换成 int 类型的结果
+**         : 1 - 执行成功
+**         : 0 - 执行失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static int parse_utf16_hex(const char *s, unsigned int *result) {
     int x1, x2, x3, x4;
     if (s[0] == '\0' || s[1] == '\0' || s[2] == '\0' || s[3] == '\0') {
@@ -295,9 +332,14 @@ static int is_decimal(const char *string, size_t length) {
     return 1;
 }
 
-// 读取指定 JSON 文件名的数据到动态分配的缓冲区中，并返回这个缓冲区首地址
-// filename 表示要读取的 JSON 文件名
-// return char 表示读取到 JSON 数据的缓冲区首地址
+/*********************************************************************************************************
+** 函数名称: read_file
+** 功能描述: 读取指定 JSON 文件名的数据到动态分配的缓冲区中，并返回这个缓冲区首地址
+** 输     入: filename - 要读取的 JSON 文件名
+** 输     出: file_contents - 读取到 JSON 数据的缓冲区首地址
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static char * read_file(const char * filename) {
     FILE *fp = fopen(filename, "r");
     size_t size_to_read = 0;
@@ -331,9 +373,15 @@ static char * read_file(const char * filename) {
     return file_contents;
 }
 
-// 从指定的字符串中移除和 JSON 数据无关的注释信息，注释信息指的是在起始标识符和结束标识符之间的内容
-// start_token 表示注释信息的起始标识符，例如 /* 和 //
-// end_token 表示注释信息的结束标识符 */ 和 \n
+/*********************************************************************************************************
+** 函数名称: remove_comments
+** 功能描述: 从指定的字符串中移除和 JSON 数据无关的注释信息，注释信息是指在起始标识符和结束标识符之间的内容
+** 输     入: start_token - 注释信息的起始标识符，例如 /* 和 //
+*///       : end_token - 注释信息的结束标识符 */ 和 \n                                                
+/* 输     出: string - 移除了注释信息的 JSON 数据
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static void remove_comments(char *string, const char *start_token, const char *end_token) {
     int in_string = 0, escaped = 0;
     size_t i;
@@ -370,8 +418,15 @@ static void remove_comments(char *string, const char *start_token, const char *e
 }
 
 /* JSON Object */
-// 创建并初始化一个 JSON Object 变量
-// wrapping_value 表示新创建的 JSON Object 所属 JSON_Value 指针
+/*********************************************************************************************************
+** 函数名称: json_object_init
+** 功能描述: 创建并初始化一个 JSON Object 变量
+** 输     入: wrapping_value - 新创建的 JSON Object 所属 JSON_Value 指针
+** 输     出: new_obj - 新的 JSON Object 变量
+**         : NULL - 执行失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Object * json_object_init(JSON_Value *wrapping_value) {
     JSON_Object *new_obj = (JSON_Object*)parson_malloc(sizeof(JSON_Object));
     if (new_obj == NULL) {
@@ -385,10 +440,16 @@ static JSON_Object * json_object_init(JSON_Value *wrapping_value) {
     return new_obj;
 }
 
-// 向指定的 JSON object 中添加一个新的“键值对”成员
-// object 表示我们要操作的 JSON object 对象
-// name 表示“键值对”的“键”标识符
-// value 表示“键值对”的“值”标识符内容
+/*********************************************************************************************************
+** 函数名称: json_object_add
+** 功能描述: 向指定的 JSON object 中添加一个新的“键值对”成员
+** 输     入: object - 我们要操作的 JSON object 对象
+**         : name - “键值对”的“键”标识符
+**         : value - “键值对”的“值”标识符内容
+** 输     出: JSON_Status - 执行状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Status json_object_add(JSON_Object *object, const char *name, JSON_Value *value) {
     if (name == NULL) {
         return JSONFailure;
@@ -396,11 +457,17 @@ static JSON_Status json_object_add(JSON_Object *object, const char *name, JSON_V
     return json_object_addn(object, name, strlen(name), value);
 }
 
-// 向指定的 JSON object 中添加一个新的“键值对”成员，需要我们指定“键”标识符的长度
-// object 表示我们要操作的 JSON object 对象
-// name 表示“键值对”的“键”标识符
-// name_len 表示“键值对”的“键”标识符长度
-// value 表示“键值对”的“值”标识符内容
+/*********************************************************************************************************
+** 函数名称: json_object_addn
+** 功能描述: 向指定的 JSON object 中添加一个新的“键值对”成员，需要我们指定“键”标识符的长度
+** 输     入: object - 我们要操作的 JSON object 对象
+**         : name - “键值对”的“键”标识符
+**         : name_len - “键值对”的“键”标识符长度
+**         : value - “键值对”的“值”标识符内容
+** 输     出: JSON_Status - 执行状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Status json_object_addn(JSON_Object *object, const char *name, size_t name_len, JSON_Value *value) {
     size_t index = 0;
     if (object == NULL || name == NULL || value == NULL) {
@@ -426,11 +493,17 @@ static JSON_Status json_object_addn(JSON_Object *object, const char *name, size_
     return JSONSuccess;
 }
 
-// 把指定的 JSON object 的 capacity 设置成指定的新值
-// 一个 JSON object 可以按照“键值对”的方式存储数据，在指定的 JSON object 中 capacity 字段
-// 表示的是这个 JSON object 可以存储多少个“键值对”
-// object 表示我们要操作的 JSON object 对象
-// new_capacity 表示新的存储空间大小
+/*********************************************************************************************************
+** 函数名称: json_object_resize
+** 功能描述: 把指定的 JSON object 的 capacity 设置成指定的新值
+** 注     释:  一个 JSON object 可以按照“键值对”的方式存储数据，在指定的 JSON object 中 capacity 字段表示的
+**         : 是这个 JSON object 可以存储多少个“键值对”
+** 输     入: object - 我们要操作的 JSON object 对象
+**         : new_capacity - 新的存储空间大小
+** 输     出: JSON_Status - 执行状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Status json_object_resize(JSON_Object *object, size_t new_capacity) {
     char **temp_names = NULL;
     JSON_Value **temp_values = NULL;
@@ -461,11 +534,16 @@ static JSON_Status json_object_resize(JSON_Object *object, size_t new_capacity) 
     return JSONSuccess;
 }
 
-// 在指定的 JSON object 中，通过“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
-// object 表示我们要操作的 JSON object 对象
-// name 表示“键值对”的“键”标识符
-// name_len 表示“键值对”的“键”标识符长度
-// return JSON_Value 表示读取到的 JSON_Value 变量
+/*********************************************************************************************************
+** 函数名称: json_object_getn_value
+** 功能描述: 在指定的 JSON object 中，通过“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
+** 输     入: object - 我们要操作的 JSON object 对象
+**         : name - “键值对”的“键”标识符
+**         : name_len - “键值对”的“键”标识符长度
+** 输     出: JSON_Status - 执行状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Value * json_object_getn_value(const JSON_Object *object, const char *name, size_t name_len) {
     size_t i, name_length;
     for (i = 0; i < json_object_get_count(object); i++) {
@@ -480,11 +558,16 @@ static JSON_Value * json_object_getn_value(const JSON_Object *object, const char
     return NULL;
 }
 
-// 从指定的 JSON object 中通过“键值对”的“键”标识符找到与其对应的成员并删除
-// object 表示我们要操作的 JSON object 对象
-// name 表示“键值对”的“键”标识符
-// free_value 表示是否释放“键值对”的“值”标识符占用的资源
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_remove_internal
+** 功能描述: 从指定的 JSON object 中通过“键值对”的“键”标识符找到与其对应的成员并删除
+** 输     入: object - 我们要操作的 JSON object 对象
+**         : name - “键值对”的“键”标识符
+**         : free_value - 是否释放“键值对”的“值”标识符占用的资源
+** 输     出: JSON_Status - 执行状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Status json_object_remove_internal(JSON_Object *object, const char *name, int free_value) {
     size_t i = 0, last_item_index = 0;
     if (object == NULL || json_object_get_value(object, name) == NULL) {
@@ -508,11 +591,16 @@ static JSON_Status json_object_remove_internal(JSON_Object *object, const char *
     return JSONFailure; /* No execution path should end here */
 }
 
-// 从指定的 JSON object 中通过“点表示法”找到与其对应的成员并删除
-// object 表示我们要操作的 JSON object 对象
-// name 表示“键值对”的“键”标识符
-// free_value 表示是否释放“键值对”的“值”标识符占用的资源
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_dotremove_internal
+** 功能描述: 从指定的 JSON object 中通过“点表示法”找到与其对应的成员并删除
+** 输     入: object - 我们要操作的 JSON object 对象
+**         : name - “点表示法”表示的“键值对”的“键”标识符
+**         : free_value - 是否释放“键值对”的“值”标识符占用的资源
+** 输     出: JSON_Status - 执行状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Status json_object_dotremove_internal(JSON_Object *object, const char *name, int free_value) {
     JSON_Value *temp_value = NULL;
     JSON_Object *temp_object = NULL;
@@ -528,8 +616,14 @@ static JSON_Status json_object_dotremove_internal(JSON_Object *object, const cha
     return json_object_dotremove_internal(temp_object, dot_pos + 1, free_value);
 }
 
-// 释放一个 JSON object 类型成员所占用的所有内存空间
-// object 表示我们要释放的 JSON object 对象
+/*********************************************************************************************************
+** 函数名称: json_object_free
+** 功能描述: 释放一个 JSON object 类型成员所占用的所有内存空间
+** 输     入: object - 我们要操作的 JSON object 对象
+** 输     出: 
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static void json_object_free(JSON_Object *object) {
     size_t i;
     for (i = 0; i < object->count; i++) {
@@ -542,9 +636,14 @@ static void json_object_free(JSON_Object *object) {
 }
 
 /* JSON Array */
-// 创建并初始化一个 JSON Array 变量
-// wrapping_value 表示新创建的 JSON Array 所属 JSON_Value 指针
-// return JSON_Array 表示新创建并初始化的 JSON_Array 指针
+/*********************************************************************************************************
+** 函数名称: json_array_init
+** 功能描述: 创建并初始化一个 JSON Array 变量
+** 输     入: wrapping_value - 新创建的 JSON Array 所属 JSON_Value 指针
+** 输     出: new_array - 新创建并初始化的 JSON_Array 指针
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Array * json_array_init(JSON_Value *wrapping_value) {
     JSON_Array *new_array = (JSON_Array*)parson_malloc(sizeof(JSON_Array));
     if (new_array == NULL) {
@@ -557,10 +656,15 @@ static JSON_Array * json_array_init(JSON_Value *wrapping_value) {
     return new_array;
 }
 
-// 向指定的 JSON array 中添加一个新的 JSON_Value 成员
-// array 表示我们要操作的 JSON array 对象
-// value 表示新添加的数组成员单位
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_array_add
+** 功能描述: 向指定的 JSON array 中添加一个新的 JSON_Value 成员
+** 输     入: array - 我们要操作的 JSON array 对象
+**         : value - 新添加的数组成员单位
+** 输     出: JSON_Status - 执行状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Status json_array_add(JSON_Array *array, JSON_Value *value) {
     if (array->count >= array->capacity) {
         size_t new_capacity = MAX(array->capacity * 2, STARTING_CAPACITY);
@@ -574,12 +678,17 @@ static JSON_Status json_array_add(JSON_Array *array, JSON_Value *value) {
     return JSONSuccess;
 }
 
-// 把指定的 JSON array 的 capacity 设置成指定的新值
-// 一个 JSON array 可以按照数组的方式存储 JSON_Value 数据，在指定的 JSON array 中 capacity 字段
-// 表示的是这个 JSON array 可以存储多少个 JSON_Value
-// array 表示我们要操作的 JSON array 对象
-// new_capacity 表示新的存储空间大小
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_array_resize
+** 功能描述: 把指定的 JSON array 的 capacity 设置成指定的新值
+** 注     释: 一个 JSON array 可以按照数组的方式存储 JSON_Value 数据，在指定的 JSON array 中 capacity 字段
+**         : 表示的是这个 JSON array 可以存储多少个 JSON_Value
+** 输     入: array - 我们要操作的 JSON array 对象
+**         : new_capacity - 新的存储空间大小
+** 输     出: JSON_Status - 执行状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Status json_array_resize(JSON_Array *array, size_t new_capacity) {
     JSON_Value **new_items = NULL;
     if (new_capacity == 0) {
@@ -598,7 +707,14 @@ static JSON_Status json_array_resize(JSON_Array *array, size_t new_capacity) {
     return JSONSuccess;
 }
 
-// 释放一个 JSON array 类型成员所占用的所有内存空间
+/*********************************************************************************************************
+** 函数名称: json_array_free
+** 功能描述: 释放一个 JSON array 类型成员所占用的所有内存空间
+** 输     入: array - 我们要操作的 JSON array 对象
+** 输     出: 
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static void json_array_free(JSON_Array *array) {
     size_t i;
     for (i = 0; i < array->count; i++) {
@@ -609,9 +725,14 @@ static void json_array_free(JSON_Array *array) {
 }
 
 /* JSON Value */
-// 创建并初始化一个         JSONString 类型的 JSON_Value 变量
-// string 表示新创建的变量需要初始化成的内容
-// return JSON_Array 表示新创建并初始化的 JSONString 类型的 JSON_Array 指针
+/*********************************************************************************************************
+** 函数名称: json_value_init_string_no_copy
+** 功能描述: 创建并初始化一个             JSONString 类型的 JSON_Value 变量
+** 输     入: string - 新创建的变量需要初始化成的内容
+** 输     出: new_value - 新创建并初始化的 JSONString 类型的 JSON_Array 指针
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Value * json_value_init_string_no_copy(char *string) {
     JSON_Value *new_value = (JSON_Value*)parson_malloc(sizeof(JSON_Value));
     if (!new_value) {
@@ -624,11 +745,17 @@ static JSON_Value * json_value_init_string_no_copy(char *string) {
 }
 
 /* Parser */
-// 找到第一个双引号对的位置，比如函数参数的内容为：
-// "name" : "zhaogezhang"，在调用完这个函数之后，*string 指向的位置如下：
-//       ^
-// 即第一个双引号对后的第一个字符位置
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: skip_quotes
+** 功能描述: 找到第一个双引号对的位置，比如函数参数的内容为：
+**         : "name" : "zhaogezhang"，在调用完这个函数之后，*string 指向的位置如下：
+**         :       ^
+**         : 即第一个双引号对后的第一个字符位置
+** 输     入: string - 需要处理的字符串指针
+** 输     出: JSON_Status - 执行状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Status skip_quotes(const char **string) {
     if (**string != '\"') {
         return JSONFailure;
@@ -649,10 +776,15 @@ static JSON_Status skip_quotes(const char **string) {
     return JSONSuccess;
 }
 
-// 把 utf16 编码格式数据转换成与其对应的字符串格式数据
-// unprocessed 表示需要被转换的 utf16 格式编码数据
-// processed 表示存储转换结果的缓冲区
-// return int 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: parse_utf16
+** 功能描述: 把 utf16 编码格式数据转换成与其对应的字符串格式数据
+** 输     入: unprocessed - 需要被转换的 utf16 格式编码数据
+**         : processed - 存储转换结果的缓冲区
+** 输     出: JSON_Status - 执行状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static int parse_utf16(const char **unprocessed, char **processed) {
     unsigned int cp, lead, trail;
     int parse_succeeded = 0;
@@ -702,10 +834,15 @@ static int parse_utf16(const char **unprocessed, char **processed) {
 
 /* Copies and processes passed string up to supplied length.
 Example: "\u006Corem ipsum" -> lorem ipsum */
-// 把不同格式的输入字符串数据转换成与其对应的 ascii 字符串格式
-// input 表示需要转换的不同格式数据
-// len 表示我们需要转换的字符长度
-// return char * 表示转换后 的 ascii 字符串格式地址
+/*********************************************************************************************************
+** 函数名称: process_string
+** 功能描述: 把不同格式的输入字符串数据转换成与其对应的 ascii 字符串格式
+** 输     入: input - 需要转换的不同格式数据
+**         : len - 我们需要转换的字符长度
+** 输     出: output - 转换后 的 ascii 字符串格式地址
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static char* process_string(const char *input, size_t len) {
     const char *input_ptr = input;
     size_t initial_size = (len + 1) * sizeof(char);
@@ -762,12 +899,17 @@ error:
 
 /* Return processed contents of a string between quotes and
    skips passed argument to a matching quote. */
-// 提取以“双引号”开头的字符串中，第一个“双引号对”中的数据内容，并将这些数据
-// 转换成与其对应的 ascii 字符串格式并返回，例如：
-// if arg string = "name": "zhaoge.zhang"
-// return char * =  name
-// 
-// return char * 表示转换后 的 ascii 字符串格式地址
+/*********************************************************************************************************
+** 函数名称: get_quoted_string
+** 功能描述: 提取以“双引号”开头的字符串中，第一个“双引号对”中的数据内容，并将这些数据转换成与其对应的
+**         : ascii 字符串格式并返回，例如：
+**         : if arg string = "name": "zhaoge.zhang"
+**         : return char * =  name
+** 输     入: string - 需要提取的字符串指针
+** 输     出: output - 转换后的 ascii 字符串格式地址
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static char * get_quoted_string(const char **string) {
     const char *string_start = *string;
     size_t string_len = 0;
@@ -779,9 +921,16 @@ static char * get_quoted_string(const char **string) {
     return process_string(string_start + 1, string_len);
 }
 
-// 解析指定的 JSON 字符串数据
-// string 表示需要解析的 JSON 字符串
-// nesting 表示当前解析的 JSON 字符串在整个 JSON 数据中的嵌套层数
+/*********************************************************************************************************
+** 函数名称: parse_value
+** 功能描述: 解析指定的 JSON 字符串数据，将其转换成“树形结构”表示形式
+** 输     入: string - 需要解析的 JSON 字符串
+**         : nesting - 当前解析的 JSON 字符串在整个 JSON 数据中的嵌套层数
+** 输     出: JSON_Value - 转换后的“树形结构” JSON 数据
+**         : NULL - 转换失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Value * parse_value(const char **string, size_t nesting) {
     if (nesting > MAX_NESTING) {
         return NULL;
@@ -807,10 +956,16 @@ static JSON_Value * parse_value(const char **string, size_t nesting) {
     }
 }
 
-// 把“序列化”格式的字符串 JSON object 解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
-// string 表示需要解析的“序列化”格式的字符串
-// nesting 表示当前 JSON object 在整个 JSON 数据中的嵌套层数
-// return JSON_Value 表示转换后的“树形结构”格式的 JSON_Value 数据
+/*********************************************************************************************************
+** 函数名称: parse_object_value
+** 功能描述: 把“序列化”格式的字符串 JSON object 解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
+** 输     入: string - 需要解析的“序列化”格式的字符串
+**         : nesting - 当前 JSON object 在整个 JSON 数据中的嵌套层数
+** 输     出: JSON_Value - 转换后的“树形结构”格式的 JSON_Value 数据
+**         : NULL - 转换失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Value * parse_object_value(const char **string, size_t nesting) {
     JSON_Value *output_value = NULL, *new_value = NULL;
     JSON_Object *output_object = NULL;
@@ -873,10 +1028,16 @@ static JSON_Value * parse_object_value(const char **string, size_t nesting) {
     return output_value;
 }
 
-// 把“序列化”格式的字符串 JSON array 解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
-// string 表示需要解析的“序列化”格式的字符串
-// nesting 表示当前 JSON array 在整个 JSON 数据中的嵌套层数
-// return JSON_Value 表示转换后的“树形结构”格式的 JSON_Value 数据
+/*********************************************************************************************************
+** 函数名称: parse_array_value
+** 功能描述: 把“序列化”格式的字符串 JSON array 解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
+** 输     入: string - 需要解析的“序列化”格式的字符串
+**         : nesting - 当前 JSON object 在整个 JSON 数据中的嵌套层数
+** 输     出: JSON_Value - 转换后的“树形结构”格式的 JSON_Value 数据
+**         : NULL - 转换失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Value * parse_array_value(const char **string, size_t nesting) {
     JSON_Value *output_value = NULL, *new_array_value = NULL;
     JSON_Array *output_array = NULL;
@@ -923,9 +1084,15 @@ static JSON_Value * parse_array_value(const char **string, size_t nesting) {
     return output_value;
 }
 
-// 把“序列化”的双引号格式的 JSON string 解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
-// string 表示需要解析的“序列化”的双引号格式的字符串
-// return JSON_Value 表示转换后的“树形结构”格式的 JSON_String 数据
+/*********************************************************************************************************
+** 函数名称: parse_string_value
+** 功能描述: 把“序列化”的双引号格式的 JSON string 解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
+** 输     入: string - 需要解析的“序列化”的双引号格式的字符串
+** 输     出: JSON_Value - 转换后的“树形结构”格式的 JSON_String 数据
+**         : NULL - 转换失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Value * parse_string_value(const char **string) {
     JSON_Value *value = NULL;
     char *new_string = get_quoted_string(string);
@@ -940,9 +1107,15 @@ static JSON_Value * parse_string_value(const char **string) {
     return value;
 }
 
-// 把“序列化”的 JSON bool 类型变量解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
-// string 表示需要解析的“序列化”的 JSON bool 字符串
-// return JSON_Value 表示转换后的“树形结构”格式的 JSON_Bool 数据
+/*********************************************************************************************************
+** 函数名称: parse_boolean_value
+** 功能描述: 把“序列化”的 JSON bool 类型变量解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
+** 输     入: string - 需要解析的“序列化”的 JSON bool 字符串
+** 输     出: JSON_Value - 转换后的“树形结构”格式的 JSON_Bool 数据
+**         : NULL - 转换失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Value * parse_boolean_value(const char **string) {
     size_t true_token_size = SIZEOF_TOKEN("true");
     size_t false_token_size = SIZEOF_TOKEN("false");
@@ -956,9 +1129,15 @@ static JSON_Value * parse_boolean_value(const char **string) {
     return NULL;
 }
 
-// 把“序列化”的 JSON number 类型变量解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
-// string 表示需要解析的“序列化”的 JSON number 字符串
-// return JSON_Value 表示转换后的“树形结构”格式的 JSON_Number 数据
+/*********************************************************************************************************
+** 函数名称: parse_number_value
+** 功能描述: 把“序列化”的 JSON number 类型变量解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
+** 输     入: string - 需要解析的“序列化”的 JSON number 字符串
+** 输     出: JSON_Value - 转换后的“树形结构”格式的 JSON_Number 数据
+**         : NULL - 转换失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Value * parse_number_value(const char **string) {
     char *end;
     double number = 0;
@@ -971,9 +1150,15 @@ static JSON_Value * parse_number_value(const char **string) {
     return json_value_init_number(number);
 }
 
-// 把“序列化”的 JSON null 类型变量解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
-// string 表示需要解析的“序列化”的 JSON null 字符串
-// return JSON_Value 表示转换后的“树形结构”格式的 JSON_Null 数据
+/*********************************************************************************************************
+** 函数名称: parse_null_value
+** 功能描述: 把“序列化”的 JSON null 类型变量解析并转换成与其对应的“树形结构”格式的 JSON_Value 数据
+** 输     入: string - 需要解析的“序列化”的 JSON null 字符串
+** 输     出: JSON_Value - 转换后的“树形结构”格式的 JSON_Null 数据
+**         : NULL - 转换失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static JSON_Value * parse_null_value(const char **string) {
     size_t token_size = SIZEOF_TOKEN("null");
     if (strncmp("null", *string, token_size) == 0) {
@@ -994,14 +1179,20 @@ static JSON_Value * parse_null_value(const char **string) {
                                   if (buf != NULL) { buf += written; }\
                                   written_total += written; } while(0)
 
-// 把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据
-// 并把转换后的结果存储到我们指定的缓存空间中
-// value 表示需要转换的“树形结构” JSON 数据
-// buf 表示用来存储转换后的、“序列化”格式的字符串缓冲区
-// level 表示在“序列化”的字符串中，不同 JSON 对象之间需要添加的空格数量，单位是 4 个空格
-// is_pretty 表示我们在“序列化”后的字符串中是否需要添加格式化空格来提高可阅读性
-// num_buf 表示用来存储 JSONNumber 类型变量值的缓冲区
-// return int 表示我们序列化后的字符串长度，不包括字符串结尾'\0'字符
+/*********************************************************************************************************
+** 函数名称: json_serialize_to_buffer_r
+** 功能描述: 把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据并把转换后
+**         : 的结果存储到我们指定的缓存空间中
+** 输	 入: value - 需要转换的“树形结构” JSON 数据
+**         : buf - 用来存储转换后的、“序列化”格式的字符串缓冲区
+**         : level - 在“序列化”的字符串中，不同 JSON 对象之间需要添加的空格数量，单位是 4 个空格
+**         : is_pretty - 我们在“序列化”后的字符串中是否需要添加格式化空格来提高可阅读性
+**         : num_buf - 用来存储 JSONNumber 类型变量值的缓冲区
+** 输	 出: written_total - 我们序列化后的字符串长度，不包括字符串结尾'\0'字符
+**		   : -1 - 执行失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static int json_serialize_to_buffer_r(const JSON_Value *value, char *buf, int level, int is_pretty, char *num_buf)
 {
     const char *key = NULL, *string = NULL;
@@ -1138,11 +1329,17 @@ static int json_serialize_to_buffer_r(const JSON_Value *value, char *buf, int le
     }
 }
 
-// 把指定的 JSON string 数据转换成与其对应的“序列化”格式的字符串数据并把转换后的结果
-// 存储到我们指定的缓存空间中（常常用于序列化“键值对”中的“键”描述符字段）
-// string 表示我们需要序列化的 JSON string 字符串
-// buf 表示存储序列化后结果的缓冲区起始地址
-// return int 表示一共向 buf 中写入数据的字节数
+/*********************************************************************************************************
+** 函数名称: json_serialize_string
+** 功能描述: 把指定的 JSON string 数据转换成与其对应的“序列化”格式的字符串数据并把转换后的结果存储到我们
+**         : 指定的缓存空间中（常常用于序列化“键值对”中的“键”描述符字段）
+** 输	 入: string - 我们需要序列化的 JSON string 字符串
+**         : buf - 存储序列化后结果的缓冲区起始地址
+** 输	 出: written_total - 一共向 buf 中写入数据的字节数
+**		   : -1 - 执行失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static int json_serialize_string(const char *string, char *buf) {
     size_t i = 0, len = strlen(string);
     char c = '\0';
@@ -1210,10 +1407,16 @@ static int json_serialize_string(const char *string, char *buf) {
     return written_total;
 }
 
-// 向指定的缓冲区中追加指定个数的空格块，每个空格块包含 4 个空格字符
-// buf 表示我们要追加空格块的缓冲区起始地址
-// level 表示我们要追加的空格块个数
-// return int 表示一共向 buf 中写入数据的字节数
+/*********************************************************************************************************
+** 函数名称: append_indent
+** 功能描述: 向指定的缓冲区中追加指定个数的空格块，每个空格块包含 4 个空格字符
+** 输	 入: buf - 我们要追加空格块的缓冲区起始地址
+**         : level - 我们要追加的空格块个数
+** 输	 出: written_total - 一共向 buf 中写入数据的字节数
+**		   : -1 - 执行失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static int append_indent(char *buf, int level) {
     int i;
     int written = -1, written_total = 0;
@@ -1223,10 +1426,16 @@ static int append_indent(char *buf, int level) {
     return written_total;
 }
 
-// 把指定的字符串追加到指定的缓冲区中
-// buf 表示我们要追加字符串的缓冲区起始地址
-// string 表示我们要向缓冲区中追加的字符串内容
-// return int 表示一共向 buf 中写入数据的字节数
+/*********************************************************************************************************
+** 函数名称: append_string
+** 功能描述: 把指定的字符串追加到指定的缓冲区中
+** 输	 入: buf - 我们要追加字符串的缓冲区起始地址
+**         : string - 我们要向缓冲区中追加的字符串内容
+** 输	 出: written_total - 一共向 buf 中写入数据的字节数
+**		   : -1 - 执行失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 static int append_string(char *buf, const char *string) {
     if (buf == NULL) {
         return (int)strlen(string);
@@ -1238,10 +1447,16 @@ static int append_string(char *buf, const char *string) {
 #undef APPEND_INDENT
 
 /* Parser API */
-// 读取指定的 JSON 文件内容（序列化格式）并把读取到的“序列化”格式 JSON 数据解析并转换
-// 成“树形结构” JSON 表示格式
-// filename 表示存储“序列化”格式 JSON 数据的文件名
-// return JSON_Value 表示解析转换后的“树形结构” JSON 数据
+/*********************************************************************************************************
+** 函数名称: json_parse_file
+** 功能描述: 读取指定的 JSON 文件内容（序列化格式）并把读取到的“序列化”格式 JSON 数据解析并转换成“树形结构”
+**         : JSON 表示格式
+** 输	 入: filename - 存储“序列化”格式 JSON 数据的文件名
+** 输	 出: output_value - 解析转换后的“树形结构” JSON 数据
+**		   : NULL - 执行失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_parse_file(const char *filename) {
     char *file_contents = read_file(filename);
     JSON_Value *output_value = NULL;
@@ -1253,12 +1468,18 @@ JSON_Value * json_parse_file(const char *filename) {
     return output_value;
 }
 
-// 读取指定的 JSON 文件内容（序列化格式）并把读取到的“序列化”格式 JSON 数据解析并转换
-// 成“树形结构” JSON 表示格式这个函数除了包含解析 JSON 字符串功能外，还包含去除 JSON 
-// 字符串中注释信息的功能逻辑所以如果我们的 JSON 文件中不仅包含 JSON 原始数据，还包含
-// 了注释信息，那么我们就可以调用这个接口来解析
-// filename 表示存储“序列化”格式 JSON 数据的文件名
-// return JSON_Value 表示解析转换后的“树形结构” JSON 数据
+/*********************************************************************************************************
+** 函数名称: json_parse_file_with_comments
+** 功能描述: 读取指定的 JSON 文件内容（序列化格式）并把读取到的“序列化”格式 JSON 数据解析并转换成“树形结构” 
+**         : JSON 表示格式
+** 注     释: 这个函数除了包含解析 JSON 字符串功能外，还包含去除 JSON 字符串中注释信息的功能逻辑，所以如果在
+**         : JSON 文件中不仅包含 JSON 原始数据，还包含了注释信息，那么我们就可以调用这个接口来解析
+** 输	 入: filename - 存储“序列化”格式 JSON 数据的文件名
+** 输	 出: output_value - 解析转换后的“树形结构” JSON 数据
+**		   : NULL - 执行失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_parse_file_with_comments(const char *filename) {
     char *file_contents = read_file(filename);
     JSON_Value *output_value = NULL;
@@ -1270,9 +1491,15 @@ JSON_Value * json_parse_file_with_comments(const char *filename) {
     return output_value;
 }
 
-// 解析指定的 JSON 字符串数据（序列化格式）并转换成能表示 JSON 数据树形结构的表示形式
-// string 表示序列化格式的 JSON 字符串数据
-// return JSON_Value 表示和序列化 JSON 字符串对应的 JSON 数据结构表示形式的数据
+/*********************************************************************************************************
+** 函数名称: json_parse_string
+** 功能描述: 解析指定的 JSON 字符串数据（序列化格式）并转换成能表示 JSON 数据树形结构的表示形式
+** 输	 入: string - 序列化格式的 JSON 字符串数据
+** 输	 出: JSON_Value - 和序列化 JSON 字符串对应的 JSON 数据结构表示形式的数据
+**		   : NULL - 执行失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_parse_string(const char *string) {
     if (string == NULL) {
         return NULL;
@@ -1283,12 +1510,17 @@ JSON_Value * json_parse_string(const char *string) {
     return parse_value((const char**)&string, 0);
 }
 
-// 解析指定的 JSON 字符串数据（序列化格式）并转换成能表示 JSON 数据树形结构的表示形式
-// 这个函数除了包含解析 JSON 字符串功能外，还包含去除 JSON 字符串中注释信息的功能逻辑
-// 所以如果我们的 JSON 文件中不仅包含 JSON 原始数据，还包含了注释信息，那么我们就可以
-// 调用这个接口来解析
-// string 表示序列化格式的 JSON 字符串数据
-// return JSON_Value 表示和序列化 JSON 字符串对应的 JSON 数据结构表示形式的数据
+/*********************************************************************************************************
+** 函数名称: json_parse_string_with_comments
+** 功能描述: 解析指定的 JSON 字符串数据（序列化格式）并转换成能表示 JSON 数据树形结构的表示形式
+** 注     释: 这个函数除了包含解析 JSON 字符串功能外，还包含去除 JSON 字符串中注释信息的功能逻辑，所以如果
+**         : 我们的 JSON 文件中不仅包含 JSON 原始数据，还包含了注释信息，那么我们就可以调用这个接口来解析
+** 输	 入: string - 序列化格式的 JSON 字符串数据
+** 输	 出: JSON_Value - 和序列化 JSON 字符串对应的 JSON 数据结构表示形式的数据
+**		   : NULL - 执行失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_parse_string_with_comments(const char *string) {
     JSON_Value *result = NULL;
     char *string_mutable_copy = NULL, *string_mutable_copy_ptr = NULL;
@@ -1305,10 +1537,16 @@ JSON_Value * json_parse_string_with_comments(const char *string) {
 }
 
 /* JSON Object API */
-// 在指定的 JSON object 中，通过“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
-// object 表示我们要操作的 JSON object 对象
-// name 表示“键值对”的“键”标识符
-// return JSON_Value 表示读取到的 JSON_Value 变量
+/*********************************************************************************************************
+** 函数名称: json_object_get_value
+** 功能描述: 在指定的 JSON object 中，通过“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “键值对”的“键”标识符
+** 输	 出: JSON_Value - 读取到的 JSON_Value 变量
+**		   : NULL - 执行失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_object_get_value(const JSON_Object *object, const char *name) {
     if (object == NULL || name == NULL) {
         return NULL;
@@ -1316,50 +1554,91 @@ JSON_Value * json_object_get_value(const JSON_Object *object, const char *name) 
     return json_object_getn_value(object, name, strlen(name));
 }
 
-// 在指定的 JSON object 中，通过 JSONString 类型变量的“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
-// object 表示我们要操作的 JSON object 对象
-// name 表示“键值对”的“键”标识符
-// return char 表示读取到的 JSONString 类型 string 变量值
+/*********************************************************************************************************
+** 函数名称: json_object_get_string
+** 功能描述: 在指定的 JSON object 中，通过 JSONString 类型变量的“键值对”中的“键”标识符获取与其对应的“值”
+**         : 标识符的内容
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “键值对”的“键”标识符
+** 输	 出: string - 读取到的 JSONString 类型 string 变量值
+**		   : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 const char * json_object_get_string(const JSON_Object *object, const char *name) {
     return json_value_get_string(json_object_get_value(object, name));
 }
 
-// 在指定的 JSON object 中，通过 JSONNumber 类型变量的“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
-// object 表示我们要操作的 JSON object 对象
-// name 表示“键值对”的“键”标识符
-// return double 表示读取到的 JSONNumber 类型 number 变量值
+/*********************************************************************************************************
+** 函数名称: json_object_get_number
+** 功能描述: 在指定的 JSON object 中，通过 JSONNumber 类型变量的“键值对”中的“键”标识符获取与其对应的“值”
+**         : 标识符的内容
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “键值对”的“键”标识符
+** 输	 出: double - 读取到的 JSONNumber 类型 number 变量值
+**		   : 0 - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 double json_object_get_number(const JSON_Object *object, const char *name) {
     return json_value_get_number(json_object_get_value(object, name));
 }
 
-// 在指定的 JSON object 中，通过 JSONObject 类型变量的“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
-// object 表示我们要操作的 JSON object 对象
-// name 表示“键值对”的“键”标识符
-// return JSON_Object 表示读取到的 JSONObject 类型 object 变量值
+/*********************************************************************************************************
+** 函数名称: json_object_get_object
+** 功能描述: 在指定的 JSON object 中，通过 JSONObject 类型变量的“键值对”中的“键”标识符获取与其对应的“值”
+**         : 标识符的内容
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “键值对”的“键”标识符
+** 输	 出: JSON_Object - 读取到的 JSONObject 类型 object 变量值
+**		   : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Object * json_object_get_object(const JSON_Object *object, const char *name) {
     return json_value_get_object(json_object_get_value(object, name));
 }
 
-// 在指定的 JSON object 中，通过 JSONArray 类型变量的“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
-// object 表示我们要操作的 JSON object 对象
-// name 表示“键值对”的“键”标识符
-// return JSON_Array 表示读取到的 JSONArray 类型 array 变量值
+/*********************************************************************************************************
+** 函数名称: json_object_get_array
+** 功能描述: 在指定的 JSON object 中，通过 JSONArray 类型变量的“键值对”中的“键”标识符获取与其对应的“值”
+**         : 标识符的内容
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “键值对”的“键”标识符
+** 输	 出: JSON_Array - 读取到的 JSONArray 类型 array 变量值
+**		   : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Array * json_object_get_array(const JSON_Object *object, const char *name) {
     return json_value_get_array(json_object_get_value(object, name));
 }
 
-// 在指定的 JSON object 中，通过 JSONBoolean 类型变量的“键值对”中的“键”标识符获取与其对应的“值”标识符的内容
-// object 表示我们要操作的 JSON object 对象
-// name 表示“键值对”的“键”标识符
-// return int 表示读取到的 JSONBoolean 类型 boolean 变量值
+/*********************************************************************************************************
+** 函数名称: json_object_get_boolean
+** 功能描述: 在指定的 JSON object 中，通过 JSONBoolean 类型变量的“键值对”中的“键”标识符获取与其对应的“值”
+**         : 标识符的内容
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “键值对”的“键”标识符
+** 输	 出: JSONBoolean - 读取到的 JSONBoolean 类型 boolean 变量值
+**		   : -1 - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 int json_object_get_boolean(const JSON_Object *object, const char *name) {
     return json_value_get_boolean(json_object_get_value(object, name));
 }
 
-// 在指定的 JSON object 中，通过“点”描述法获取对应路径位置上的 JSON_Value 变量
-// object 表示我们要操作的 JSON object 对象
-// name 表示“点”描述法的 JSON_Value 变量路径
-// return JSON_Value 表示读取到的 JSON_Value 变量
+/*********************************************************************************************************
+** 函数名称: json_object_dotget_value
+** 功能描述: 在指定的 JSON object 中，通过“点”描述法获取对应路径位置上的 JSON_Value 变量
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “点”描述法的 JSON_Value 变量路径
+** 输	 出: JSON_Value - 读取到的 JSON_Value 变量
+**		   : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_object_dotget_value(const JSON_Object *object, const char *name) {
     const char *dot_position = strchr(name, '.');
     if (!dot_position) {
@@ -1369,52 +1648,97 @@ JSON_Value * json_object_dotget_value(const JSON_Object *object, const char *nam
     return json_object_dotget_value(object, dot_position + 1);
 }
 
-// 在指定的 JSON object 中，通过 JSONString 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
-// object 表示我们要操作的 JSON object 对象
-// name 表示“点”描述法的 JSON_Value 变量路径
-// return char 表示读取到的 JSONString 类型 string 变量值
+/*********************************************************************************************************
+** 函数名称: json_object_dotget_string
+** 功能描述: 在指定的 JSON object 中，通过 JSONString 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “点”描述法的 JSON_Value 变量路径
+** 输	 出: string - 读取到的 JSONString 类型 string 变量值
+**		   : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 const char * json_object_dotget_string(const JSON_Object *object, const char *name) {
     return json_value_get_string(json_object_dotget_value(object, name));
 }
 
-// 在指定的 JSON object 中，通过 JSONNumber 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
-// object 表示我们要操作的 JSON object 对象
-// name 表示“点”描述法的 JSON_Value 变量路径
-// return double 表示读取到的 JSONNumber 类型 number 变量值
+/*********************************************************************************************************
+** 函数名称: json_object_dotget_number
+** 功能描述: 在指定的 JSON object 中，通过 JSONNumber 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “点”描述法的 JSON_Value 变量路径
+** 输	 出: double - 读取到的 JSONNumber 类型 number 变量值
+**		   : 0 - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 double json_object_dotget_number(const JSON_Object *object, const char *name) {
     return json_value_get_number(json_object_dotget_value(object, name));
 }
 
-// 在指定的 JSON object 中，通过 JSONObject 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
-// object 表示我们要操作的 JSON object 对象
-// name 表示“点”描述法的 JSON_Value 变量路径
-// return JSON_Object 表示读取到的 JSONObject 类型 object 变量值
+/*********************************************************************************************************
+** 函数名称: json_object_dotget_object
+** 功能描述: 在指定的 JSON object 中，通过 JSONObject 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “点”描述法的 JSON_Value 变量路径
+** 输	 出: JSON_Object - 读取到的 JSONObject 类型 object 变量值
+**		   : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Object * json_object_dotget_object(const JSON_Object *object, const char *name) {
     return json_value_get_object(json_object_dotget_value(object, name));
 }
 
-// 在指定的 JSON object 中，通过 JSONArray 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
-// object 表示我们要操作的 JSON object 对象
-// name 表示“点”描述法的 JSON_Value 变量路径
-// return JSON_Array 表示读取到的 JSONArray 类型 array 变量值
+/*********************************************************************************************************
+** 函数名称: json_object_dotget_array
+** 功能描述: 在指定的 JSON object 中，通过 JSONArray 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “点”描述法的 JSON_Value 变量路径
+** 输	 出: JSON_Array - 读取到的 JSONArray 类型 array 变量值
+**		   : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Array * json_object_dotget_array(const JSON_Object *object, const char *name) {
     return json_value_get_array(json_object_dotget_value(object, name));
 }
 
-// 在指定的 JSON object 中，通过 JSONBoolean 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
-// object 表示我们要操作的 JSON object 对象
-// name 表示“点”描述法的 JSON_Value 变量路径
-// return int 表示读取到的 JSONBoolean 类型 boolean 变量值
+/*********************************************************************************************************
+** 函数名称: json_object_dotget_boolean
+** 功能描述: 在指定的 JSON object 中，通过 JSONBoolean 类型变量的“点”描述法获取对应路径位置上的 JSON_Value 变量
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “点”描述法的 JSON_Value 变量路径
+** 输	 出: JSONBoolean - 读取到的 JSONBoolean 类型 boolean 变量值
+**		   : -1 - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 int json_object_dotget_boolean(const JSON_Object *object, const char *name) {
     return json_value_get_boolean(json_object_dotget_value(object, name));
 }
 
-// 获取指定 JSON object 中已经存储的“键值对”个数
+/*********************************************************************************************************
+** 函数名称: json_object_get_count
+** 功能描述: 获取指定 JSON object 中已经存储的“键值对”个数
+** 输	 入: object - 我们要操作的 JSON object 对象
+** 输	 出: size_t - “键值对”个数
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 size_t json_object_get_count(const JSON_Object *object) {
     return object ? object->count : 0;
 }
 
-// 获取指定 JSON object 中指定索引位置的“键值对”的“键”标识符内容
+/*********************************************************************************************************
+** 函数名称: json_object_get_name
+** 功能描述: 获取指定 JSON object 中指定索引位置的“键值对”的“键”标识符内容
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : index - “键”标识符索引值
+** 输	 出: string - “键”标识符内容
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 const char * json_object_get_name(const JSON_Object *object, size_t index) {
     if (object == NULL || index >= json_object_get_count(object)) {
         return NULL;
@@ -1422,7 +1746,15 @@ const char * json_object_get_name(const JSON_Object *object, size_t index) {
     return object->names[index];
 }
 
-// 获取指定 JSON object 中指定索引位置的“键值对”的“值”标识符内容
+/*********************************************************************************************************
+** 函数名称: json_object_get_value_at
+** 功能描述: 获取指定 JSON object 中指定索引位置的“键值对”的“值”标识符内容
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : index - “值”标识符索引值
+** 输	 出: string - “值”标识符内容
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_object_get_value_at(const JSON_Object *object, size_t index) {
     if (object == NULL || index >= json_object_get_count(object)) {
         return NULL;
@@ -1430,35 +1762,89 @@ JSON_Value * json_object_get_value_at(const JSON_Object *object, size_t index) {
     return object->values[index];
 }
 
-// 获取指定 JSON object 所属的 JSON_Value 的指针
+/*********************************************************************************************************
+** 函数名称: json_object_get_wrapping_value
+** 功能描述: 获取指定 JSON object 所属的 JSON_Value 的指针
+** 输	 入: object - 我们要操作的 JSON object 对象
+** 输	 出: JSON_Value - 指定 JSON object 所属的 JSON_Value 的指针
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value *json_object_get_wrapping_value(const JSON_Object *object) {
     return object->wrapping_value;
 }
 
-// 判断指定的 JSON object 中是否存在指定“键”标识符的“键值对”数据内容
+/*********************************************************************************************************
+** 函数名称: json_object_has_value
+** 功能描述: 判断指定的 JSON object 中是否存在指定“键”标识符的“键值对”数据内容
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “键值对”的“键”标识符
+** 输	 出: 1 - “键值对”数据存在
+**         : 0 - “键值对”数据不存在
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 int json_object_has_value (const JSON_Object *object, const char *name) {
     return json_object_get_value(object, name) != NULL;
 }
 
-// 判断指定的 JSON object 中是否存在指定“键”标识符及 JSON_Value_Type 的“键值对”数据内容
+/*********************************************************************************************************
+** 函数名称: json_object_has_value_of_type
+** 功能描述: 判断指定的 JSON object 中是否存在指定“键”标识符及 JSON_Value_Type 的“键值对”数据内容
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “键值对”的“键”标识符
+**         : type - “键值对”的“值”标识符数据类型
+** 输	 出: 1 - “键值对”数据及类型存在
+**         : 0 - “键值对”数据及类型不存在
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 int json_object_has_value_of_type(const JSON_Object *object, const char *name, JSON_Value_Type type) {
     JSON_Value *val = json_object_get_value(object, name);
     return val != NULL && json_value_get_type(val) == type;
 }
 
-// 判断指定的 JSON object 中是否存在“点”描述法指定的“键值对”数据内容
+/*********************************************************************************************************
+** 函数名称: json_object_has_value_of_type
+** 功能描述: 判断指定的 JSON object 中是否存在“点”描述法指定的“键值对”数据内容
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “点”描述法的 JSON_Value 变量路径
+** 输	 出: JSON_Value - 读取到的 JSON_Value 变量
+**		   : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 int json_object_dothas_value (const JSON_Object *object, const char *name) {
     return json_object_dotget_value(object, name) != NULL;
 }
 
-// 判断指定的 JSON object 中是否存在“点”描述法及 JSON_Value_Type 指定的“键值对”数据内容
+/*********************************************************************************************************
+** 函数名称: json_object_dothas_value_of_type
+** 功能描述: 判断指定的 JSON object 中是否存在“点”描述法及 JSON_Value_Type 指定的“键值对”数据内容
+** 输	 入: object - 我们要操作的 JSON object 对象
+**         : name - “点”描述法的 JSON_Value 变量路径
+**         : type - “键值对”的“值”标识符数据类型
+** 输	 出: 1 - “键值对”数据及类型存在
+**         : 0 - “键值对”数据及类型不存在
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 int json_object_dothas_value_of_type(const JSON_Object *object, const char *name, JSON_Value_Type type) {
     JSON_Value *val = json_object_dotget_value(object, name);
     return val != NULL && json_value_get_type(val) == type;
 }
 
 /* JSON Array API */
-// 获取指定的 JSON array 中指定索引位置处的 JSON_Value 成员数据内容
+/*********************************************************************************************************
+** 函数名称: json_array_get_value
+** 功能描述: 获取指定的 JSON array 中指定索引位置处的 JSON_Value 成员数据内容
+** 输	 入: array - 我们要操作的 JSON array 对象
+**         : index - 数组元素索引值
+** 输	 出: JSON_Value - 读取到的数组成员
+**         : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_array_get_value(const JSON_Array *array, size_t index) {
     if (array == NULL || index >= json_array_get_count(array)) {
         return NULL;
@@ -1466,93 +1852,200 @@ JSON_Value * json_array_get_value(const JSON_Array *array, size_t index) {
     return array->items[index];
 }
 
-// 在指定的 JSON array 中，通过 JSONString 类型变量的“索引下标值”获取与其对应的内容
-// array 表示我们要操作的 JSON array 对象
-// index 表示 JSONString 类型变量的“索引下标值”
-// return char 表示读取到的 JSONString 类型 string 变量值
+/*********************************************************************************************************
+** 函数名称: json_array_get_string
+** 功能描述: 在指定的 JSON array 中，通过 JSONString 类型变量的“索引下标值”获取与其对应的内容
+** 输	 入: array - 我们要操作的 JSON array 对象
+**         : index - JSONString 类型变量的“索引下标值”
+** 输	 出: JSON_Value - 读取到的 JSONString 类型 string 变量值
+**         : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 const char * json_array_get_string(const JSON_Array *array, size_t index) {
     return json_value_get_string(json_array_get_value(array, index));
 }
 
-// 在指定的 JSON array 中，通过 JSONNumber 类型变量的“索引下标值”获取与其对应的内容
-// array 表示我们要操作的 JSON array 对象
-// index 表示 JSONNumber 类型变量的“索引下标值”
-// return double 表示读取到的 JSONNumber 类型 number 变量值
+/*********************************************************************************************************
+** 函数名称: json_array_get_number
+** 功能描述: 在指定的 JSON array 中，通过 JSONNumber 类型变量的“索引下标值”获取与其对应的内容
+** 输	 入: array - 我们要操作的 JSON array 对象
+**         : index - JSONNumber 类型变量的“索引下标值”
+** 输	 出: double - 读取到的 JSONNumber 类型 number 变量值
+**         : 0 - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 double json_array_get_number(const JSON_Array *array, size_t index) {
     return json_value_get_number(json_array_get_value(array, index));
 }
 
-// 在指定的 JSON array 中，通过 JSONObject 类型变量的“索引下标值”获取与其对应的内容
-// array 表示我们要操作的 JSON array 对象
-// index 表示 JSONObject 类型变量的“索引下标值”
-// return JSON_Object 表示读取到的 JSONObject 类型 object 变量值
+/*********************************************************************************************************
+** 函数名称: json_array_get_object
+** 功能描述: 在指定的 JSON array 中，通过 JSONObject 类型变量的“索引下标值”获取与其对应的内容
+** 输	 入: array - 我们要操作的 JSON array 对象
+**         : index - JSONObject 类型变量的“索引下标值”
+** 输	 出: double - 读取到的 JSONObject 类型 object 变量值
+**         : 0 - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Object * json_array_get_object(const JSON_Array *array, size_t index) {
     return json_value_get_object(json_array_get_value(array, index));
 }
 
-// 在指定的 JSON array 中，通过 JSONArray 类型变量的“索引下标值”获取与其对应的内容
-// array 表示我们要操作的 JSON array 对象
-// index 表示 JSONArray 类型变量的“索引下标值”
-// return JSON_Array 表示读取到的 JSONArray 类型 array 变量值
+/*********************************************************************************************************
+** 函数名称: json_array_get_array
+** 功能描述: 在指定的 JSON array 中，通过 JSONArray 类型变量的“索引下标值”获取与其对应的内容
+** 输	 入: array - 我们要操作的 JSON array 对象
+**         : index - JSONArray 类型变量的“索引下标值”
+** 输	 出: double - 读取到的 JSONArray 类型 array 变量值
+**         : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Array * json_array_get_array(const JSON_Array *array, size_t index) {
     return json_value_get_array(json_array_get_value(array, index));
 }
 
-// 在指定的 JSON array 中，通过 JSONBoolean 类型变量的“索引下标值”获取与其对应的内容
-// array 表示我们要操作的 JSON array 对象
-// index 表示 JSONBoolean 类型变量的“索引下标值”
-// return int 表示读取到的 JSONBoolean 类型 boolean 变量值
+/*********************************************************************************************************
+** 函数名称: json_array_get_boolean
+** 功能描述: 在指定的 JSON array 中，通过 JSONBoolean 类型变量的“索引下标值”获取与其对应的内容
+** 输	 入: array - 我们要操作的 JSON array 对象
+**         : index - JSONBoolean 类型变量的“索引下标值”
+** 输	 出: double - 读取到的 JSONBoolean 类型 boolean 变量值
+**         : -1 - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 int json_array_get_boolean(const JSON_Array *array, size_t index) {
     return json_value_get_boolean(json_array_get_value(array, index));
 }
 
-// 获取指定的 JSON_Array 中已经存储的 JSON_Value 成员个数
+/*********************************************************************************************************
+** 函数名称: json_array_get_count
+** 功能描述: 获取指定的 JSON_Array 中已经存储的 JSON_Value 成员个数
+** 输	 入: array - 我们要操作的 JSON array 对象
+** 输	 出: size_t - JSON_Array 成员个数
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 size_t json_array_get_count(const JSON_Array *array) {
     return array ? array->count : 0;
 }
 
-// 获取指定的 JSON_Array 所属 JSON_Value 的指针
+/*********************************************************************************************************
+** 函数名称: json_array_get_wrapping_value
+** 功能描述: 获取指定的 JSON_Array 所属 JSON_Value 的指针
+** 输	 入: array - 我们要操作的 JSON array 对象
+** 输	 出: JSON_Value - JSON_Array 所属 JSON_Value 的指针
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_array_get_wrapping_value(const JSON_Array *array) {
     return array->wrapping_value;
 }
 
 /* JSON Value API */
-// 获取指定 JSON_Value 对应的变量类型
+/*********************************************************************************************************
+** 函数名称: json_value_get_type
+** 功能描述: 获取指定 JSON_Value 对应的变量类型
+** 输	 入: value - 我们要操作的 JSON_Value 对象
+** 输	 出: JSON_Value_Type - JSON_Value 对象类型
+**         : JSONError - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value_Type json_value_get_type(const JSON_Value *value) {
     return value ? value->type : JSONError;
 }
 
-// 获取指定的 JSONObject 类型的 JSON_Value 所对应的变量值
+/*********************************************************************************************************
+** 函数名称: json_value_get_object
+** 功能描述: 获取指定的 JSONObject 类型的 JSON_Value 所对应的变量值
+** 输	 入: value - 我们要操作的 JSON_Value 对象
+** 输	 出: JSON_Object - JSON_Object 变量值
+**         : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Object * json_value_get_object(const JSON_Value *value) {
     return json_value_get_type(value) == JSONObject ? value->value.object : NULL;
 }
 
-// 获取指定的 JSONArray 类型的 JSON_Value 所对应的变量值
+/*********************************************************************************************************
+** 函数名称: json_value_get_array
+** 功能描述: 获取指定的 JSONArray 类型的 JSON_Value 所对应的变量值
+** 输	 入: value - 我们要操作的 JSON_Value 对象
+** 输	 出: JSON_Array - JSONArray 变量值
+**         : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Array * json_value_get_array(const JSON_Value *value) {
     return json_value_get_type(value) == JSONArray ? value->value.array : NULL;
 }
 
-// 获取指定的 JSONString 类型的 JSON_Value 所对应的变量值
+/*********************************************************************************************************
+** 函数名称: json_value_get_string
+** 功能描述: 获取指定的 JSONString 类型的 JSON_Value 所对应的变量值
+** 输	 入: value - 我们要操作的 JSON_Value 对象
+** 输	 出: string - JSONString 变量值
+**         : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 const char * json_value_get_string(const JSON_Value *value) {
     return json_value_get_type(value) == JSONString ? value->value.string : NULL;
 }
 
-// 获取指定的 JSONNumber 类型的 JSON_Value 所对应的变量值
+/*********************************************************************************************************
+** 函数名称: json_value_get_number
+** 功能描述: 获取指定的 JSONNumber 类型的 JSON_Value 所对应的变量值
+** 输	 入: value - 我们要操作的 JSON_Value 对象
+** 输	 出: double - JSONNumber 变量值
+**         : 0 - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 double json_value_get_number(const JSON_Value *value) {
     return json_value_get_type(value) == JSONNumber ? value->value.number : 0;
 }
 
-// 获取指定的 JSONBoolean 类型的 JSON_Value 所对应的变量值
+/*********************************************************************************************************
+** 函数名称: json_value_get_boolean
+** 功能描述: 获取指定的 JSONBoolean 类型的 JSON_Value 所对应的变量值
+** 输	 入: value - 我们要操作的 JSON_Value 对象
+** 输	 出: JSONBoolean - JSONBoolean 变量值
+**         : -1 - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 int json_value_get_boolean(const JSON_Value *value) {
     return json_value_get_type(value) == JSONBoolean ? value->value.boolean : -1;
 }
 
-// 获取指定 JSON_Value 在“树形结构”表示形式中父节点的指针
+/*********************************************************************************************************
+** 函数名称: json_value_get_parent
+** 功能描述: 获取指定 JSON_Value 在“树形结构”表示形式中父节点的指针
+** 输	 入: value - 我们要操作的 JSON_Value 对象
+** 输	 出: JSON_Value - 父节点的指针
+**         : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_value_get_parent (const JSON_Value *value) {
     return value ? value->parent : NULL;
 }
 
-// 释放 JSON “键值对”中的“值”标识符占用的内存资源
+/*********************************************************************************************************
+** 函数名称: json_value_free
+** 功能描述: 释放 JSON “键值对”中的“值”标识符占用的内存资源
+** 输	 入: value - 我们要操作的 JSON_Value 对象
+** 输	 出: 
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 void json_value_free(JSON_Value *value) {
     switch (json_value_get_type(value)) {
         case JSONObject:
@@ -1570,8 +2063,14 @@ void json_value_free(JSON_Value *value) {
     parson_free(value);
 }
 
-// 创建并初始化一个 JSON_Object 类型的 JSON_Value 变量
-// return JSON_Value 表示成功创建的 JSON_Object 变量
+/*********************************************************************************************************
+** 函数名称: json_value_init_object
+** 功能描述: 创建并初始化一个 JSON_Object 类型的 JSON_Value 变量
+** 输	 入: 
+** 输	 出: JSON_Value - 创建的 JSON_Object 变量
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_value_init_object(void) {
     JSON_Value *new_value = (JSON_Value*)parson_malloc(sizeof(JSON_Value));
     if (!new_value) {
@@ -1587,8 +2086,14 @@ JSON_Value * json_value_init_object(void) {
     return new_value;
 }
 
-// 创建并初始化一个 JSON_Array 类型的 JSON_Value 变量
-// return JSON_Value 表示成功创建的 JSON_Array 变量
+/*********************************************************************************************************
+** 函数名称: json_value_init_array
+** 功能描述: 创建并初始化一个 JSON_Array 类型的 JSON_Value 变量
+** 输	 入: 
+** 输	 出: JSON_Value - 创建的 JSON_Array 变量
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_value_init_array(void) {
     JSON_Value *new_value = (JSON_Value*)parson_malloc(sizeof(JSON_Value));
     if (!new_value) {
@@ -1604,9 +2109,14 @@ JSON_Value * json_value_init_array(void) {
     return new_value;
 }
 
-// 创建并初始化一个 JSON_String 类型的 JSON_Value 变量
-// string 表示 JSON_String 类型的 JSON_Value 变量初始值
-// return JSON_Value 表示成功创建的 JSON_String 变量
+/*********************************************************************************************************
+** 函数名称: json_value_init_string
+** 功能描述: 创建并初始化一个 JSON_String 类型的 JSON_Value 变量
+** 输	 入: string - JSON_String 类型的 JSON_Value 变量初始值
+** 输	 出: JSON_Value - 创建的 JSON_String 变量
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_value_init_string(const char *string) {
     char *copy = NULL;
     JSON_Value *value;
@@ -1629,9 +2139,14 @@ JSON_Value * json_value_init_string(const char *string) {
     return value;
 }
 
-// 创建并初始化一个 JSON_Number 类型的 JSON_Value 变量
-// number 表示 JSON_Number 类型的 JSON_Value 变量初始值
-// return JSON_Value 表示成功创建的 JSON_Number 变量
+/*********************************************************************************************************
+** 函数名称: json_value_init_number
+** 功能描述: 创建并初始化一个 JSON_Number 类型的 JSON_Value 变量
+** 输	 入: number - JSON_Number 类型的 JSON_Value 变量初始值
+** 输	 出: JSON_Value - 创建的 JSON_Number 变量
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_value_init_number(double number) {
     JSON_Value *new_value = NULL;
     if (IS_NUMBER_INVALID(number)) {
@@ -1647,9 +2162,14 @@ JSON_Value * json_value_init_number(double number) {
     return new_value;
 }
 
-// 创建并初始化一个 JSON_Bool 类型的 JSON_Value 变量
-// boolean 表示 JSON_Bool 类型的 JSON_Value 变量初始值
-// return JSON_Value 表示成功创建的 JSON_Bool 变量
+/*********************************************************************************************************
+** 函数名称: json_value_init_boolean
+** 功能描述: 创建并初始化一个 JSON_Bool 类型的 JSON_Value 变量
+** 输	 入: boolean - JSON_Bool 类型的 JSON_Value 变量初始值
+** 输	 出: JSON_Value - 创建的 JSON_Bool 变量
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_value_init_boolean(int boolean) {
     JSON_Value *new_value = (JSON_Value*)parson_malloc(sizeof(JSON_Value));
     if (!new_value) {
@@ -1661,8 +2181,14 @@ JSON_Value * json_value_init_boolean(int boolean) {
     return new_value;
 }
 
-// 创建并初始化一个 JSON_Null 类型的 JSON_Value 变量
-// return JSON_Value 表示成功创建的 JSON_Null 变量
+/*********************************************************************************************************
+** 函数名称: json_value_init_null
+** 功能描述: 创建并初始化一个 JSON_Null 类型的 JSON_Value 变量
+** 输	 入: boolean - JSON_Bool 类型的 JSON_Value 变量初始值
+** 输	 出: JSON_Value - 创建的 JSON_Null 变量
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_value_init_null(void) {
     JSON_Value *new_value = (JSON_Value*)parson_malloc(sizeof(JSON_Value));
     if (!new_value) {
@@ -1673,10 +2199,15 @@ JSON_Value * json_value_init_null(void) {
     return new_value;
 }
 
-// 分别递归遍历指定的“树形结构” JSON 数据，为每一个节点对象分配新的内存空间
-// 并复制对应的数据内容到新空间中，然后返回“新构建”数的根节点 JSON_Value 地址
-// value 表示需要被复制的树形结构 JSON 数据
-// return JSON_Value 表示新复制的树形结构 JSON 数据
+/*********************************************************************************************************
+** 函数名称: json_value_deep_copy
+** 功能描述: 分别递归遍历指定的“树形结构” JSON 数据，为每一个节点对象分配新的内存空间并复制对应的数据内容
+**         : 到新空间中，然后返回“新构建”数的根节点 JSON_Value 地址
+** 输	 入: value - 需要被复制的树形结构 JSON 数据
+** 输	 出: JSON_Value - 新复制的树形结构 JSON 数据
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value * json_value_deep_copy(const JSON_Value *value) {
     size_t i = 0;
     JSON_Value *return_value = NULL, *temp_value_copy = NULL, *temp_value = NULL;
@@ -1764,22 +2295,32 @@ JSON_Value * json_value_deep_copy(const JSON_Value *value) {
     }
 }
 
-// 计算对指定的“树形结构” JSON 数据“序列化”后的字符串所占用的内存空间大小，这个接口计算的是
-// 没有添加格式化空格来提高可阅读性时所占用的内存空间大小
-// value 表示需要被转换的“树形结构” JSON 数据
-// return size_t 表示序列化后所需要的内存空间大小
+/*********************************************************************************************************
+** 函数名称: json_serialization_size
+** 功能描述: 计算对指定的“树形结构” JSON 数据“序列化”后的字符串所占用的内存空间大小
+** 注     释: 这个接口计算的是没有添加格式化空格来提高可阅读性时所占用的内存空间大小
+** 输	 入: value - 需要被转换的“树形结构” JSON 数据
+** 输	 出: size_t - 序列化后所需要的内存空间大小
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 size_t json_serialization_size(const JSON_Value *value) {
     char num_buf[NUM_BUF_SIZE]; /* recursively allocating buffer on stack is a bad idea, so let's do it only once */
     int res = json_serialize_to_buffer_r(value, NULL, 0, 0, num_buf);
     return res < 0 ? 0 : (size_t)(res + 1);
 }
 
-// 把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据
-// 并把转换后的结果存储到我们指定的缓存空间中，这个转换接口没有添加格式化空格来提高可
-// 阅读性，所以占用空间比较少
-// value 表示需要转换的“树形结构” JSON 数据
-// buf 表示用来存储转换后的、“序列化”格式的字符串缓冲区
-// buf_size_in_bytes 表示用来存储“序列化”字符串的缓冲区空间大小
+/*********************************************************************************************************
+** 函数名称: json_serialize_to_buffer
+** 功能描述: 把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据并把转换后的
+**         : 结果存储到我们指定的缓存空间中
+** 注     释: 这个转换接口没有添加格式化空格来提高可阅读性，所以占用空间比较少
+** 输	 入: value - 需要转换的“树形结构” JSON 数据
+**         : buf - 用来存储转换后的、“序列化”格式的字符串缓冲区
+** 输	 出: buf_size_in_bytes - 用来存储“序列化”字符串的缓冲区空间大小
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_serialize_to_buffer(const JSON_Value *value, char *buf, size_t buf_size_in_bytes) {
     int written = -1;
     size_t needed_size_in_bytes = json_serialization_size(value);
@@ -1793,12 +2334,17 @@ JSON_Status json_serialize_to_buffer(const JSON_Value *value, char *buf, size_t 
     return JSONSuccess;
 }
 
-// 把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据
-// 并把转换后的结果存储到我们指定的文件中，这个转换接口没有添加格式化空格来提高可阅读
-// 性，所以占用空间比较少
-// value 表示需要转换的“树形结构” JSON 数据
-// filename 表示用来存储转换后的、“序列化”格式的字符串文件名
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_serialize_to_file
+** 功能描述: 把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据并把转换后的
+**         : 结果存储到我们指定的文件中
+** 注     释: 这个转换接口没有添加格式化空格来提高可阅读性，所以占用空间比较少
+** 输	 入: value - 需要转换的“树形结构” JSON 数据
+**         : filename - 用来存储转换后的、“序列化”格式的字符串文件名
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_serialize_to_file(const JSON_Value *value, const char *filename) {
     JSON_Status return_code = JSONSuccess;
     FILE *fp = NULL;
@@ -1821,10 +2367,16 @@ JSON_Status json_serialize_to_file(const JSON_Value *value, const char *filename
     return return_code;
 }
 
-// 把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据，并返回字符串地址
-// 这个转换接口没有添加格式化空格来提高可阅读性，所以占用空间比较少
-// value 表示需要转换的“树形结构” JSON 数据
-// return char * 表示序列化后字符串地址
+/*********************************************************************************************************
+** 函数名称: json_serialize_to_string
+** 功能描述: 把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据，并返回字
+**         : 符串地址
+** 注     释: 这个转换接口没有添加格式化空格来提高可阅读性，所以占用空间比较少
+** 输	 入: value - 需要转换的“树形结构” JSON 数据
+** 输	 出: string - 序列化后字符串指针
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 char * json_serialize_to_string(const JSON_Value *value) {
     JSON_Status serialization_result = JSONFailure;
     size_t buf_size_bytes = json_serialization_size(value);
@@ -1844,22 +2396,32 @@ char * json_serialize_to_string(const JSON_Value *value) {
     return buf;
 }
 
-// 计算如果把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据
-// 并在“序列化”后的字符串中是否需要添加格式化空格所需要的缓冲区空间大小
-// value 表示需要转换的“树形结构” JSON 数据
-// return size_t 表示我们序列化指定“树形结构” JSON 数据需要的缓冲区空间大小
+/*********************************************************************************************************
+** 函数名称: json_serialization_size_pretty
+** 功能描述: 计算如果把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据
+**         : 并在“序列化”后的字符串中是否需要添加格式化空格所需要的缓冲区空间大小
+** 输	 入: value - 需要转换的“树形结构” JSON 数据
+** 输	 出: size_t - 我们序列化指定“树形结构” JSON 数据需要的缓冲区空间大小
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 size_t json_serialization_size_pretty(const JSON_Value *value) {
     char num_buf[NUM_BUF_SIZE]; /* recursively allocating buffer on stack is a bad idea, so let's do it only once */
     int res = json_serialize_to_buffer_r(value, NULL, 0, 1, num_buf);
     return res < 0 ? 0 : (size_t)(res + 1);
 }
 
-// 把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据，并在
-// “序列化”字符串时添加格式化空格来提高可阅读性，然后把转换后的结果存储到我们指定的缓存空间中
-// value 表示需要转换的“树形结构” JSON 数据
-// buf 表示用来存储转换后的、“序列化”格式的字符串缓冲区
-// buf_size_in_bytes 表示 buf 缓冲区长度
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_serialize_to_buffer_pretty
+** 功能描述: 把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据，并在
+**         : “序列化”字符串时添加格式化空格来提高可阅读性，然后把转换后的结果存储到我们指定的缓存空间中
+** 输	 入: value - 需要转换的“树形结构” JSON 数据
+**         : buf - 用来存储转换后的、“序列化”格式的字符串缓冲区
+**         : buf 缓冲区长度
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_serialize_to_buffer_pretty(const JSON_Value *value, char *buf, size_t buf_size_in_bytes) {
     int written = -1;
     size_t needed_size_in_bytes = json_serialization_size_pretty(value);
@@ -1873,11 +2435,16 @@ JSON_Status json_serialize_to_buffer_pretty(const JSON_Value *value, char *buf, 
     return JSONSuccess;
 }
 
-// 把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据，并在
-// “序列化”字符串时添加格式化空格来提高可阅读性，然后把转换后的结果存储到我们指定的文件中
-// value 表示需要转换的“树形结构” JSON 数据
-// filename 表示存储“序列化” JSON 的文件名
-// return JSON_Status 表示操作结果
+/*********************************************************************************************************
+** 函数名称: json_serialize_to_file_pretty
+** 功能描述: 把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据，并在
+**         : “序列化”字符串时添加格式化空格来提高可阅读性，然后把转换后的结果存储到我们指定的文件中
+** 输	 入: value - 需要转换的“树形结构” JSON 数据
+**         : filename - 存储“序列化” JSON 的文件名
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_serialize_to_file_pretty(const JSON_Value *value, const char *filename) {
     JSON_Status return_code = JSONSuccess;
     FILE *fp = NULL;
@@ -1900,11 +2467,16 @@ JSON_Status json_serialize_to_file_pretty(const JSON_Value *value, const char *f
     return return_code;
 }
 
-// 把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据，并在
-// “序列化”字符串时添加格式化空格来提高可阅读性，然后把转换后的结果存储到我们动态分配的内存
-// 空间中并返回内存首地址（即字符串地址）
-// value 表示需要转换的“树形结构” JSON 数据
-// return char * 表示序列化后字符串地址
+/*********************************************************************************************************
+** 函数名称: json_serialize_to_string_pretty
+** 功能描述: 把指定的 JSON 数据“树形结构”的表示形式数据转换成与其对应的“序列化”格式的字符串数据，并在
+**         : “序列化”字符串时添加格式化空格来提高可阅读性，然后把转换后的结果存储到我们动态分配的内存
+**         : 空间中并返回内存首地址（即字符串地址）
+** 输	 入: value - 需要转换的“树形结构” JSON 数据
+** 输	 出: string - 序列化后字符串地址
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 char * json_serialize_to_string_pretty(const JSON_Value *value) {
     JSON_Status serialization_result = JSONFailure;
     size_t buf_size_bytes = json_serialization_size_pretty(value);
@@ -1924,16 +2496,27 @@ char * json_serialize_to_string_pretty(const JSON_Value *value) {
     return buf;
 }
 
-// 释放指定的“序列化” JSON 字符串数据所占用的内存空间
-// string 表示需要释放的“序列化” JSON 字符串数据
+/*********************************************************************************************************
+** 函数名称: json_free_serialized_string
+** 功能描述: 释放指定的“序列化” JSON 字符串数据所占用的内存空间
+** 输	 入: string - 需要释放的“序列化” JSON 字符串数据
+** 输	 出: 
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 void json_free_serialized_string(char *string) {
     parson_free(string);
 }
 
-// 在“树形结构”中，把指定 JSON_Array 的指定数组索引所对应的成员从数组中移除并释放与其对应的内存空间
-// array 表示我们要操作的 JSON_Array 对象
-// ix 表示我们要移除并释放的数组成员索引值
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_array_remove
+** 功能描述: 在“树形结构”中，把指定 JSON_Array 的指定数组索引所对应的成员从数组中移除并释放与其对应的内存空间
+** 输	 入: array - 我们要操作的 JSON_Array 对象
+**         : ix - 我们要移除并释放的数组成员索引值
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_array_remove(JSON_Array *array, size_t ix) {
     size_t to_move_bytes = 0;
     if (array == NULL || ix >= json_array_get_count(array)) {
@@ -1946,11 +2529,16 @@ JSON_Status json_array_remove(JSON_Array *array, size_t ix) {
     return JSONSuccess;
 }
 
-// 在“树形结构”中，设置指定 JSON_Array 的指定数组索引所对应成员的数据内容
-// array 表示我们要操作的 JSON_Array 对象
-// ix 表示我们要修改内容的数组成员索引值
-// value 表示我们要设置的新的数据内容
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_array_replace_value
+** 功能描述: 在“树形结构”中，设置指定 JSON_Array 的指定数组索引所对应成员的数据内容
+** 输	 入: array - 我们要操作的 JSON_Array 对象
+**         : ix - 我们要修改内容的数组成员索引值
+**         : value - 我们要设置的新的数据内容
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_array_replace_value(JSON_Array *array, size_t ix, JSON_Value *value) {
     if (array == NULL || value == NULL || value->parent != NULL || ix >= json_array_get_count(array)) {
         return JSONFailure;
@@ -1961,11 +2549,16 @@ JSON_Status json_array_replace_value(JSON_Array *array, size_t ix, JSON_Value *v
     return JSONSuccess;
 }
 
-// 在“树形结构”中，设置指定 JSON_Array 的指定数组索引所对应的 JSON_String 类型成员的数据内容
-// array 表示我们要操作的 JSON_Array 对象
-// i 表示我们要修改内容的数组成员索引值
-// string 表示我们要设置的新的字符串变量内容
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_array_replace_string
+** 功能描述: 在“树形结构”中，设置指定 JSON_Array 的指定数组索引所对应的 JSON_String 类型成员的数据内容
+** 输	 入: array - 我们要操作的 JSON_Array 对象
+**         : i - 我们要修改内容的数组成员索引值
+**         : string - 我们要设置的新的字符串变量内容
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_array_replace_string(JSON_Array *array, size_t i, const char* string) {
     JSON_Value *value = json_value_init_string(string);
     if (value == NULL) {
@@ -1978,11 +2571,16 @@ JSON_Status json_array_replace_string(JSON_Array *array, size_t i, const char* s
     return JSONSuccess;
 }
 
-// 在“树形结构”中，设置指定 JSON_Array 的指定数组索引所对应的 JSON_Number 类型成员的数据内容
-// array 表示我们要操作的 JSON_Array 对象
-// i 表示我们要修改内容的数组成员索引值
-// number 表示我们要设置的新的数值变量内容
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_array_replace_number
+** 功能描述: 在“树形结构”中，设置指定 JSON_Array 的指定数组索引所对应的 JSON_Number 类型成员的数据内容
+** 输	 入: array - 我们要操作的 JSON_Array 对象
+**         : i - 我们要修改内容的数组成员索引值
+**         : number - 我们要设置的新的数值变量内容
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_array_replace_number(JSON_Array *array, size_t i, double number) {
     JSON_Value *value = json_value_init_number(number);
     if (value == NULL) {
@@ -1995,11 +2593,16 @@ JSON_Status json_array_replace_number(JSON_Array *array, size_t i, double number
     return JSONSuccess;
 }
 
-// 在“树形结构”中，设置指定 JSON_Array 的指定数组索引所对应的 JSON_Bool 类型成员的数据内容
-// array 表示我们要操作的 JSON_Array 对象
-// i 表示我们要修改内容的数组成员索引值
-// boolean 表示我们要设置的新的布尔变量内容
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_array_replace_boolean
+** 功能描述: 在“树形结构”中，设置指定 JSON_Array 的指定数组索引所对应的 JSON_Bool 类型成员的数据内容
+** 输	 入: array - 我们要操作的 JSON_Array 对象
+**         : i - 我们要修改内容的数组成员索引值
+**         : boolean - 我们要设置的新的布尔变量内容
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_array_replace_boolean(JSON_Array *array, size_t i, int boolean) {
     JSON_Value *value = json_value_init_boolean(boolean);
     if (value == NULL) {
@@ -2012,11 +2615,15 @@ JSON_Status json_array_replace_boolean(JSON_Array *array, size_t i, int boolean)
     return JSONSuccess;
 }
 
-// 在“树形结构”中，设置指定 JSON_Array 的指定数组索引所对应的 JSON_Null 类型成员的数据内容
-// array 表示我们要操作的 JSON_Array 对象
-// i 表示我们要修改内容的数组成员索引值
-// boolean 表示我们要设置的新的 NULL 变量内容
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_array_replace_null
+** 功能描述: 在“树形结构”中，设置指定 JSON_Array 的指定数组索引所对应的 JSON_Null 类型成员的数据内容
+** 输	 入: array - 我们要操作的 JSON_Array 对象
+**         : i - 我们要修改内容的数组成员索引值
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_array_replace_null(JSON_Array *array, size_t i) {
     JSON_Value *value = json_value_init_null();
     if (value == NULL) {
@@ -2029,9 +2636,14 @@ JSON_Status json_array_replace_null(JSON_Array *array, size_t i) {
     return JSONSuccess;
 }
 
-// 清空指定 JSON_Array 对象中所有数组成员内容及释放其占用的内存空间
-// array 表示我们要操作的 JSON_Array 对象
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_array_clear
+** 功能描述: 清空指定 JSON_Array 对象中所有数组成员内容及释放其占用的内存空间
+** 输	 入: array - 我们要操作的 JSON_Array 对象
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_array_clear(JSON_Array *array) {
     size_t i = 0;
     if (array == NULL) {
@@ -2044,9 +2656,14 @@ JSON_Status json_array_clear(JSON_Array *array) {
     return JSONSuccess;
 }
 
-// 向指定的 JSON array 中追加一个新的 JSON_Value 成员
-// array 表示我们要操作的 JSON_Array 对象
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_array_append_value
+** 功能描述: 向指定的 JSON array 中追加一个新的 JSON_Value 成员
+** 输	 入: array - 我们要操作的 JSON_Array 对象
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_array_append_value(JSON_Array *array, JSON_Value *value) {
     if (array == NULL || value == NULL || value->parent != NULL) {
         return JSONFailure;
@@ -2054,9 +2671,14 @@ JSON_Status json_array_append_value(JSON_Array *array, JSON_Value *value) {
     return json_array_add(array, value);
 }
 
-// 向指定的 JSON array 中追加一个新的 JSON_String 类型的 JSON_Value 成员
-// array 表示我们要操作的 JSON_Array 对象
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_array_append_string
+** 功能描述: 向指定的 JSON array 中追加一个新的 JSON_String 类型的 JSON_Value 成员
+** 输	 入: array - 我们要操作的 JSON_Array 对象
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_array_append_string(JSON_Array *array, const char *string) {
     JSON_Value *value = json_value_init_string(string);
     if (value == NULL) {
@@ -2069,9 +2691,14 @@ JSON_Status json_array_append_string(JSON_Array *array, const char *string) {
     return JSONSuccess;
 }
 
-// 向指定的 JSON array 中追加一个新的 JSON_Number 类型的 JSON_Value 成员
-// array 表示我们要操作的 JSON_Array 对象
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_array_append_number
+** 功能描述: 向指定的 JSON array 中追加一个新的 JSON_Number 类型的 JSON_Value 成员
+** 输	 入: array - 我们要操作的 JSON_Array 对象
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_array_append_number(JSON_Array *array, double number) {
     JSON_Value *value = json_value_init_number(number);
     if (value == NULL) {
@@ -2084,9 +2711,14 @@ JSON_Status json_array_append_number(JSON_Array *array, double number) {
     return JSONSuccess;
 }
 
-// 向指定的 JSON array 中追加一个新的 JSON_Bool 类型的 JSON_Value 成员
-// array 表示我们要操作的 JSON_Array 对象
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_array_append_boolean
+** 功能描述: 向指定的 JSON array 中追加一个新的 JSON_Bool 类型的 JSON_Value 成员
+** 输	 入: array - 我们要操作的 JSON_Array 对象
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_array_append_boolean(JSON_Array *array, int boolean) {
     JSON_Value *value = json_value_init_boolean(boolean);
     if (value == NULL) {
@@ -2099,9 +2731,14 @@ JSON_Status json_array_append_boolean(JSON_Array *array, int boolean) {
     return JSONSuccess;
 }
 
-// 向指定的 JSON array 中追加一个新的 JSON_Null 类型的 JSON_Value 成员
-// array 表示我们要操作的 JSON_Array 对象
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_array_append_null
+** 功能描述: 向指定的 JSON array 中追加一个新的 JSON_Null 类型的 JSON_Value 成员
+** 输	 入: array - 我们要操作的 JSON_Array 对象
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_array_append_null(JSON_Array *array) {
     JSON_Value *value = json_value_init_null();
     if (value == NULL) {
@@ -2114,13 +2751,18 @@ JSON_Status json_array_append_null(JSON_Array *array) {
     return JSONSuccess;
 }
 
-// 设置指定 JSON object 中指定“键”描述符所对应的“值”描述符内容，如果指定的 JSON object 中已经
-// 有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内容，如果没有对应的“键值对”
-// 则向这个 JSON object 中添加一个新的“键值对”
-// object 表示我们要操作的 JSON object
-// name 表示“键值对”的“键”描述符
-// value 表示“键值对”的“值”描述符
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_set_value
+** 功能描述: 设置指定 JSON object 中指定“键”描述符所对应的“值”描述符内容，如果指定的 JSON object 中已经
+**         : 有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内容，如果没有对应的“键值对”
+**         : 则向这个 JSON object 中添加一个新的“键值对”
+** 输	 入: object - 我们要操作的 JSON object
+**         : name - “键值对”的“键”描述符
+**         : value - “键值对”的“值”描述符
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_object_set_value(JSON_Object *object, const char *name, JSON_Value *value) {
     size_t i = 0;
     JSON_Value *old_value;
@@ -2142,57 +2784,82 @@ JSON_Status json_object_set_value(JSON_Object *object, const char *name, JSON_Va
     return json_object_add(object, name, value);
 }
 
-// 设置指定 JSON object 中指定 JSON_String 类型“键”描述符所对应的“值”描述符内容，如果指定的
-// JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内容，如
-// 果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_String 类型“键值对”
-// object 表示我们要操作的 JSON object
-// name 表示“键值对”的“键”描述符
-// value 表示“键值对”的“值”描述符
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_set_string
+** 功能描述: 设置指定 JSON object 中指定 JSON_String 类型“键”描述符所对应的“值”描述符内容，如果指定的
+**         : JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内容，如
+**         : 果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_String 类型“键值对”
+** 输	 入: object - 我们要操作的 JSON object
+**         : name - “键值对”的“键”描述符
+**         : value - “键值对”的“值”描述符
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_object_set_string(JSON_Object *object, const char *name, const char *string) {
     return json_object_set_value(object, name, json_value_init_string(string));
 }
 
-// 设置指定 JSON object 中指定 JSON_Number 类型“键”描述符所对应的“值”描述符内容，如果指定的
-// JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内容，如
-// 果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_Number 类型“键值对”
-// object 表示我们要操作的 JSON object
-// name 表示“键值对”的“键”描述符
-// value 表示“键值对”的“值”描述符
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_set_number
+** 功能描述: 设置指定 JSON object 中指定 JSON_Number 类型“键”描述符所对应的“值”描述符内容，如果指定的
+**         : JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内容，如
+**         : 果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_Number 类型“键值对”
+** 输	 入: object - 我们要操作的 JSON object
+**         : name - “键值对”的“键”描述符
+**         : value - “键值对”的“值”描述符
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_object_set_number(JSON_Object *object, const char *name, double number) {
     return json_object_set_value(object, name, json_value_init_number(number));
 }
 
-// 设置指定 JSON object 中指定 JSON_Bool 类型“键”描述符所对应的“值”描述符内容，如果指定的
-// JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内容
-// 如果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_Bool 类型“键值对”
-// object 表示我们要操作的 JSON object
-// name 表示“键值对”的“键”描述符
-// value 表示“键值对”的“值”描述符
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_set_boolean
+** 功能描述: 设置指定 JSON object 中指定 JSON_Bool 类型“键”描述符所对应的“值”描述符内容，如果指定的
+**         : JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内容
+**         : 如果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_Bool 类型“键值对”
+** 输	 入: object - 我们要操作的 JSON object
+**         : name - “键值对”的“键”描述符
+**         : value - “键值对”的“值”描述符
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_object_set_boolean(JSON_Object *object, const char *name, int boolean) {
     return json_object_set_value(object, name, json_value_init_boolean(boolean));
 }
 
-// 设置指定 JSON object 中指定 JSON_Null 类型“键”描述符所对应的“值”描述符内容，如果指定的
-// JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内容
-// 如果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_Null 类型“键值对”
-// object 表示我们要操作的 JSON object
-// name 表示“键值对”的“键”描述符
-// value 表示“键值对”的“值”描述符
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_set_null
+** 功能描述: 设置指定 JSON object 中指定 JSON_Null 类型“键”描述符所对应的“值”描述符内容，如果指定的
+**         : JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内容
+**         : 如果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_Null 类型“键值对”
+** 输	 入: object - 我们要操作的 JSON object
+**         : name - “键值对”的“键”描述符
+**         : value - “键值对”的“值”描述符
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_object_set_null(JSON_Object *object, const char *name) {
     return json_object_set_value(object, name, json_value_init_null());
 }
 
-// 设置指定 JSON object 中通过“点”描述法指定“键”描述符所对应的“值”描述符内容，如果指定的 JSON object
-// 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内容，如果没有对应的“键值对”
-// 则向这个 JSON object 中添加一个新的“键值对”
-// object 表示我们要操作的 JSON object
-// name 表示“点”描述法指定的“键值对”的“键”描述符
-// value 表示“键值对”的“值”描述符
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_dotset_value
+** 功能描述: 设置指定 JSON object 中通过“点”描述法指定“键”描述符所对应的“值”描述符内容，如果指定的 JSON object
+**         : 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内容，如果没有对应的“键值对”
+**         : 则向这个 JSON object 中添加一个新的“键值对”
+** 输	 入: object - 我们要操作的 JSON object
+**         : name - “点”描述法指定的“键值对”的“键”描述符
+**         : value - “键值对”的“值”描述符
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_object_dotset_value(JSON_Object *object, const char *name, JSON_Value *value) {
     const char *dot_pos = NULL;
     JSON_Value *temp_value = NULL, *new_value = NULL;
@@ -2235,13 +2902,18 @@ JSON_Status json_object_dotset_value(JSON_Object *object, const char *name, JSON
     return JSONSuccess;
 }
 
-// 设置指定 JSON object 中通过“点”描述法指定 JSON_String 类型的“键”描述符所对应的“值”描述符内容
-// 如果指定的 JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内
-// 容，如果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_String 类型“键值对”
-// object 表示我们要操作的 JSON object
-// name 表示“点”描述法指定的“键值对”的“键”描述符
-// value 表示“键值对”的“值”描述符
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_dotset_string
+** 功能描述: 设置指定 JSON object 中通过“点”描述法指定 JSON_String 类型的“键”描述符所对应的“值”描述符内容
+**         : 如果指定的 JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内
+**         : 容，如果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_String 类型“键值对”
+** 输	 入: object - 我们要操作的 JSON object
+**         : name - “点”描述法指定的“键值对”的“键”描述符
+**         : value - “键值对”的“值”描述符
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_object_dotset_string(JSON_Object *object, const char *name, const char *string) {
     JSON_Value *value = json_value_init_string(string);
     if (value == NULL) {
@@ -2254,13 +2926,18 @@ JSON_Status json_object_dotset_string(JSON_Object *object, const char *name, con
     return JSONSuccess;
 }
 
-// 设置指定 JSON object 中通过“点”描述法指定 JSON_Number 类型的“键”描述符所对应的“值”描述符内容
-// 如果指定的 JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内
-// 容，如果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_Number 类型“键值对”
-// object 表示我们要操作的 JSON object
-// name 表示“点”描述法指定的“键值对”的“键”描述符
-// value 表示“键值对”的“值”描述符
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_dotset_number
+** 功能描述: 设置指定 JSON object 中通过“点”描述法指定 JSON_Number 类型的“键”描述符所对应的“值”描述符内容
+**         : 如果指定的 JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内
+**         : 容，如果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_Number 类型“键值对”
+** 输	 入: object - 我们要操作的 JSON object
+**         : name - “点”描述法指定的“键值对”的“键”描述符
+**         : value - “键值对”的“值”描述符
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_object_dotset_number(JSON_Object *object, const char *name, double number) {
     JSON_Value *value = json_value_init_number(number);
     if (value == NULL) {
@@ -2273,13 +2950,18 @@ JSON_Status json_object_dotset_number(JSON_Object *object, const char *name, dou
     return JSONSuccess;
 }
 
-// 设置指定 JSON object 中通过“点”描述法指定 JSON_Bool 类型的“键”描述符所对应的“值”描述符内容
-// 如果指定的 JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的
-// 内容，如果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_Bool 类型“键值对”
-// object 表示我们要操作的 JSON object
-// name 表示“点”描述法指定的“键值对”的“键”描述符
-// value 表示“键值对”的“值”描述符
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_dotset_boolean
+** 功能描述: 设置指定 JSON object 中通过“点”描述法指定 JSON_Bool 类型的“键”描述符所对应的“值”描述符内容
+**         : 如果指定的 JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内
+**         : 容，如果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_Bool 类型“键值对”
+** 输	 入: object - 我们要操作的 JSON object
+**         : name - “点”描述法指定的“键值对”的“键”描述符
+**         : value - “键值对”的“值”描述符
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_object_dotset_boolean(JSON_Object *object, const char *name, int boolean) {
     JSON_Value *value = json_value_init_boolean(boolean);
     if (value == NULL) {
@@ -2292,13 +2974,18 @@ JSON_Status json_object_dotset_boolean(JSON_Object *object, const char *name, in
     return JSONSuccess;
 }
 
-// 设置指定 JSON object 中通过“点”描述法指定 JSON_Null 类型的“键”描述符所对应的“值”描述符内容
-// 如果指定的 JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的
-// 内容，如果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_Null 类型“键值对”
-// object 表示我们要操作的 JSON object
-// name 表示“点”描述法指定的“键值对”的“键”描述符
-// value 表示“键值对”的“值”描述符
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_dotset_null
+** 功能描述: 设置指定 JSON object 中通过“点”描述法指定 JSON_Null 类型的“键”描述符所对应的“值”描述符内容
+**         : 如果指定的 JSON object 中已经有了我们指定的“键”描述符所对应的“键值对”，则更新这个“键值对”的内
+**         : 容，如果没有对应的“键值对”，则向这个 JSON object 中添加一个新的 JSON_Null 类型“键值对”
+** 输	 入: object - 我们要操作的 JSON object
+**         : name - “点”描述法指定的“键值对”的“键”描述符
+**         : value - “键值对”的“值”描述符
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_object_dotset_null(JSON_Object *object, const char *name) {
     JSON_Value *value = json_value_init_null();
     if (value == NULL) {
@@ -2311,27 +2998,42 @@ JSON_Status json_object_dotset_null(JSON_Object *object, const char *name) {
     return JSONSuccess;
 }
 
-// 从指定的 JSON object 中通过“键值对”的“键”标识符找到与其对应的成员并删除和释放
-// “键值对”的“值”标识符所占用的资源
-// object 表示我们要操作的 JSON object 对象
-// name 表示“键值对”的“键”标识符
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_remove
+** 功能描述: 从指定的 JSON object 中通过“键值对”的“键”标识符找到与其对应的成员并删除和释放“键值对”的“值”
+**         : 标识符所占用的资源
+** 输	 入: object - 我们要操作的 JSON object
+**         : name - “键值对”的“键”标识符
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_object_remove(JSON_Object *object, const char *name) {
     return json_object_remove_internal(object, name, 1);
 }
 
-// 从指定的 JSON object 中通过“点表示法”指定的“键值对”的“键”标识符对应的成员并删除和释放
-// “键值对”的“值”标识符所占用的资源
-// object 表示我们要操作的 JSON object 对象
-// name 表示“点表示法”指定的“键值对”的“键”标识符
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_dotremove
+** 功能描述: 从指定的 JSON object 中通过“点表示法”指定的“键值对”的“键”标识符对应的成员并删除和释放“键值对”
+**         : 的“值”标识符所占用的资源
+** 输	 入: object - 我们要操作的 JSON object
+**         : name - “点表示法”指定的“键值对”的“键”标识符
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_object_dotremove(JSON_Object *object, const char *name) {
     return json_object_dotremove_internal(object, name, 1);
 }
 
-// 清空指定 JSON_Object 对象中所有“键值对”成员内容及释放其占用的内存空间
-// object 表示我们要操作的 JSON_Object 对象
-// return JSON_Status 表示操作是否成功
+/*********************************************************************************************************
+** 函数名称: json_object_clear
+** 功能描述: 清空指定 JSON_Object 对象中所有“键值对”成员内容及释放其占用的内存空间
+** 输	 入: object - 我们要操作的 JSON object
+** 输	 出: JSON_Status - 操作状态
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_object_clear(JSON_Object *object) {
     size_t i = 0;
     if (object == NULL) {
@@ -2345,13 +3047,18 @@ JSON_Status json_object_clear(JSON_Object *object) {
     return JSONSuccess;
 }
 
-// 校验指定的“树形结构” JSON 数据是否符合指定的 JSON 模式，所谓的 JSON 模式是定义了
-// “树形结构” JSON 数据需要包含哪些字段以及每个字段的数据类型是什么，即“树形结构”
-// JSON 需要按照什么样的规则、或表现形式来组织数据，详细介绍查看如下链接：
-// https://json-schema.org/understanding-json-schema/about.html#about
-// schema 表示 JSON 模式数据
-// value 表示需要校验的“树形结构” JSON 数据
-// return JSON_Status 表示 JSON 数据是否符合 JSON 模式数据
+/*********************************************************************************************************
+** 函数名称: json_validate
+** 功能描述: 校验指定的“树形结构” JSON 数据是否符合指定的 JSON 模式，所谓的 JSON 模式是定义了“树形结构” 
+**         : JSON 数据需要包含哪些字段以及每个字段的数据类型是什么，即“树形结构” JSON 需要按照什么样的规则
+**         : 或表现形式来组织数据，详细介绍查看如下链接：
+**         : https://json-schema.org/understanding-json-schema/about.html#about
+** 输	 入: schema - JSON 模式数据
+**         : value - 需要校验的“树形结构” JSON 数据
+** 输	 出: JSON_Status - JSON 数据是否符合 JSON 模式数据
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Status json_validate(const JSON_Value *schema, const JSON_Value *value) {
     JSON_Value *temp_schema_value = NULL, *temp_value = NULL;
     JSON_Array *schema_array = NULL, *value_array = NULL;
@@ -2412,9 +3119,15 @@ JSON_Status json_validate(const JSON_Value *schema, const JSON_Value *value) {
     }
 }
 
-// 比较指定的两个“树形结构” JSON 数据是否相等并返回比较结果
-// a 和 b 表示需要比较的两个“树形结构” JSON 数据
-// return int 表示是否相等，1 表示相等，0 表示不相等
+/*********************************************************************************************************
+** 函数名称: json_value_equals
+** 功能描述: 比较指定的两个“树形结构” JSON 数据是否相等并返回比较结果
+** 输	 入: a 和 b - 需要比较的两个“树形结构” JSON 数据
+** 输	 出: 1 - 相等
+**         : 0 - 不相等
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 int json_value_equals(const JSON_Value *a, const JSON_Value *b) {
     JSON_Object *a_object = NULL, *b_object = NULL;
     JSON_Array *a_array = NULL, *b_array = NULL;
@@ -2479,37 +3192,93 @@ int json_value_equals(const JSON_Value *a, const JSON_Value *b) {
     }
 }
 
-// 获取指定 JSON_Value 对应的变量类型
+/*********************************************************************************************************
+** 函数名称: json_type
+** 功能描述: 获取指定 JSON_Value 对应的变量类型
+** 输	 入: value - 我们要操作的 JSON_Value 对象
+** 输	 出: JSON_Value_Type - JSON_Value 对象类型
+**         : JSONError - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Value_Type json_type(const JSON_Value *value) {
     return json_value_get_type(value);
 }
 
-// 获取指定的 JSONObject 类型的 JSON_Value 所对应的变量值
+/*********************************************************************************************************
+** 函数名称: json_object
+** 功能描述: 获取指定的 JSONObject 类型的 JSON_Value 所对应的变量值
+** 输	 入: value - 我们要操作的 JSON_Value 对象
+** 输	 出: JSON_Object - JSON_Object 变量值
+**         : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Object * json_object (const JSON_Value *value) {
     return json_value_get_object(value);
 }
 
-// 获取指定的 JSONArray 类型的 JSON_Value 所对应的变量值
+/*********************************************************************************************************
+** 函数名称: json_array
+** 功能描述: 获取指定的 JSONArray 类型的 JSON_Value 所对应的变量值
+** 输	 入: value - 我们要操作的 JSON_Value 对象
+** 输	 出: JSON_Array - JSONArray 变量值
+**         : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 JSON_Array * json_array  (const JSON_Value *value) {
     return json_value_get_array(value);
 }
 
-// 获取指定的 JSONString 类型的 JSON_Value 所对应的变量值
+/*********************************************************************************************************
+** 函数名称: json_string
+** 功能描述: 获取指定的 JSONString 类型的 JSON_Value 所对应的变量值
+** 输	 入: value - 我们要操作的 JSON_Value 对象
+** 输	 出: string - JSONString 变量值
+**         : NULL - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 const char * json_string (const JSON_Value *value) {
     return json_value_get_string(value);
 }
 
-// 获取指定的 JSONNumber 类型的 JSON_Value 所对应的变量值
+/*********************************************************************************************************
+** 函数名称: json_number
+** 功能描述: 获取指定的 JSONNumber 类型的 JSON_Value 所对应的变量值
+** 输	 入: value - 我们要操作的 JSON_Value 对象
+** 输	 出: double - JSONNumber 变量值
+**         : 0 - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 double json_number (const JSON_Value *value) {
     return json_value_get_number(value);
 }
 
-// 获取指定的 JSONBoolean 类型的 JSON_Value 所对应的变量值
+/*********************************************************************************************************
+** 函数名称: json_boolean
+** 功能描述: 获取指定的 JSONBoolean 类型的 JSON_Value 所对应的变量值
+** 输	 入: value - 我们要操作的 JSON_Value 对象
+** 输	 出: JSONBoolean - JSONBoolean 变量值
+**         : -1 - 读取失败
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 int json_boolean(const JSON_Value *value) {
     return json_value_get_boolean(value);
 }
 
-// 初始化当前解析 JSON 模块（parson）所使用的动态申请内存函数指针
+/*********************************************************************************************************
+** 函数名称: json_set_allocation_functions
+** 功能描述: 初始化当前解析 JSON 模块（parson）所使用的动态申请内存函数指针
+** 输	 入: malloc_fun - 申请内存函数指针
+**         : free_fun - 释放内存函数指针
+** 输	 出: 
+** 全局变量: 
+** 调用模块: 
+*********************************************************************************************************/
 void json_set_allocation_functions(JSON_Malloc_Function malloc_fun, JSON_Free_Function free_fun) {
     parson_malloc = malloc_fun;
     parson_free = free_fun;
